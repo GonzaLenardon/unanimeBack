@@ -20,6 +20,15 @@ Ventas.init(
       type: DataTypes.FLOAT,
       allowNull: false,
     },
+    porcentaje_aplicado: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    monto_descuento: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+
     /* usuario_id: {
       type: DataTypes.INTEGER,
       allowNull: true,

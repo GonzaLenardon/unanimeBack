@@ -15,19 +15,24 @@ const {
   addVentas,
   desdeHasta,
   deleteVenta,
+  registrarVenta,
+  ventaDetalles,
 } = require('../controllers/ventas');
 const {
   addcompras,
   addCompra,
   comprasDesdeHasta,
   eliminarCompra,
+  detalleCompra,
 } = require('../controllers/compras');
 
 const {
   addProductos,
-  allProductos,
+  /*   allProductos, */
   updateProductos,
   comprasProducto,
+  productosStock,
+  ventasProducto,
 } = require('../controllers/productos');
 const {
   addProveedor,
@@ -57,16 +62,19 @@ router.post('/user/logout', logout);
 router.post('/user/reset', resetPassword);
 
 router.get('/ventas', allVentas);
-router.post('/ventas', addVentas);
+router.post('/ventas', registrarVenta);
 router.post('/ventas/desdehasta', desdeHasta);
 router.delete('/ventas/:id', deleteVenta);
+
+router.get('/ventas/:id_producto', ventasProducto);
+router.get('/ventas/detalles/:id_venta', ventaDetalles);
 
 router.post('/listados', resumenVentas);
 router.get('/listados', verStock);
 router.post('/listados/desdehasta', resumenDesdeHasta);
 
-router.get('/productos', allProductos);
-router.get('/productos/:id_producto', comprasProducto);
+router.get('/productos', productosStock);
+/* router.get('/productos/:id_producto', comprasProducto); */
 router.post('/productos', addProductos);
 router.put('/productos/', updateProductos);
 
@@ -81,6 +89,8 @@ router.get('/detalles', allDetalles);
 router.post('/compra', addCompra);
 router.post('/compra/desdehasta', comprasDesdeHasta);
 router.delete('/compra/:id', eliminarCompra);
+router.get('/compra/:id_producto', comprasProducto);
+router.get('/compra/detalles/:id_compra', detalleCompra);
 
 router.get('/tipoventa', allTipoVentas);
 

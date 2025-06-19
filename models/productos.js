@@ -23,10 +23,20 @@ Productos.init(
     marca: {
       type: S.STRING,
       allowNull: false,
-      defaultValue: 'propio',
+      /*  defaultValue: 'propio', */
     },
-    capacidad: {
-      type: S.FLOAT,
+    modelo: {
+      type: S.STRING,
+      allowNull: false,
+    },
+
+    talle: {
+      type: S.STRING,
+      allowNull: false,
+    },
+
+    color: {
+      type: S.STRING,
       allowNull: false,
     },
 
@@ -40,6 +50,10 @@ Productos.init(
     },
     precio_venta: {
       type: S.FLOAT,
+      allowNull: false,
+    },
+    observaciones: {
+      type: S.STRING,
       allowNull: false,
     },
   },

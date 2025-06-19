@@ -1,0 +1,34 @@
+const { Model, DataTypes } = require('sequelize');
+const db = require('../db/conection');
+
+class Transferencia extends Model {}
+
+Transferencia.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    sucursal_origen_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    sucursal_destino_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    fecha: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+  },
+  {
+    sequelize: db,
+    modelName: 'transferencia',
+    tableName: 'transferencias',
+    timestamps: false,
+  }
+);
+
+module.exports = Transferencia;

@@ -10,6 +10,10 @@ DetalleCompra.init(
       primaryKey: true,
       autoIncrement: true,
     },
+    nombreProducto: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
 
     cantidad: {
       type: DataTypes.INTEGER,
@@ -23,10 +27,10 @@ DetalleCompra.init(
       type: DataTypes.DATE,
       allowNull: false,
     },
-    stock_disponible: {
+    /*  stock_disponible: {
       type: DataTypes.INTEGER,
       allowNull: false,
-    },
+    }, */
   },
   { sequelize: db, modelName: 'detallecompra' }
 );

@@ -1,4 +1,4 @@
-const { Ventas, Compras } = require('../models');
+const { Ventas, Compras, TipoVenta } = require('../models');
 const { fn, col, where: sqWhere, Op } = require('sequelize');
 
 const resumenVentas = async (req, res) => {
@@ -10,28 +10,36 @@ const resumenVentas = async (req, res) => {
     if (!fecha) {
       return res.status(400).json({ error: 'Falta fecha' });
     }
-    console.log('DESDE LISTADOS ... ', fecha);
 
-    // Aquí usas `sqWhere` y `fn('DATE', col('fecha'))` para comparar solo la fecha, sin hora
+    console.log('📆 DESDE LISTADOS ... ', fecha.toISOString().split('T')[0]);
+
     const resultados = await Ventas.findAll({
       attributes: [
         'id_tipo_venta',
         [fn('SUM', col('total')), 'suma_total'],
-        [fn('COUNT', col('total')), 'transacciones'],
+        [fn('COUNT', col('id_venta')), 'transacciones'],
+      ],
+      include: [
+        {
+          model: TipoVenta,
+          as: 'tipoVenta',
+          attributes: ['tipoVenta'],
+        },
       ],
       where: sqWhere(fn('DATE', col('fecha')), fecha),
-      group: ['id_tipo_venta'],
+      group: ['id_tipo_venta', 'tipoVenta.id_tipo'],
     });
 
     const data = resultados.map((r) => ({
       id_tipo_venta: r.get('id_tipo_venta'),
-      transacciones: r.get('transacciones'),
+      tipo_venta: r.tipoVenta?.tipoVenta || '',
+      transacciones: parseInt(r.get('transacciones')),
       suma_total: parseFloat(r.get('suma_total')),
     }));
 
     return res.status(200).json(data);
   } catch (error) {
-    console.error('Error en resumenVentas:', error);
+    console.error('❌ Error en resumenVentas:', error);
     return res.status(500).json({ error: error.message });
   }
 };

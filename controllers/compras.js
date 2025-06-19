@@ -4,11 +4,12 @@ const {
   Productos,
   Proveedores,
   DetalleVentas,
+  StockSucursal,
 } = require('../models');
 const db = require('../db/conection');
 const { Op } = require('sequelize');
 
-const addCompra = async (req, res) => {
+/* const addCompra = async (req, res) => {
   const { monto, proveedor_id, numero, detalles } = req.body;
 
   const t = await db.transaction(); // Iniciar transacción
@@ -32,6 +33,70 @@ const addCompra = async (req, res) => {
     await DetalleCompra.bulkCreate(detallesConCompra, { transaction: t });
 
     await t.commit(); // Confirmar todo
+    res.status(201).json({ message: 'Compra registrada con éxito' });
+  } catch (error) {
+    await t.rollback(); // Revertir si hay error
+    console.error('Error al registrar compra:', error);
+    res.status(500).json({ error: 'Error al registrar la compra' });
+  }
+}; */
+
+const addCompra = async (req, res) => {
+  const { monto, proveedor_id, id_usuario, numero, detalles, stockSuc } =
+    req.body;
+
+  const t = await db.transaction(); // Iniciar transacción
+  try {
+    const hoy = new Date();
+    const tresHorasEnMs = 3 * 60 * 60 * 1000;
+    const fecha = new Date(hoy.getTime() - tresHorasEnMs);
+
+    // Crear la compra
+    const nuevaCompra = await Compra.create(
+      { fecha, monto, numero, id_usuario, proveedor_id },
+      { transaction: t }
+    );
+
+    // Agregar el id_compra a cada detalle
+    const detallesConCompra = detalles.map((detalle) => ({
+      ...detalle,
+      compra_id: nuevaCompra.id_compra,
+    }));
+
+    // Crear los detalles y obtener los insertados con sus ids
+    const detallesInsertados = await DetalleCompra.bulkCreate(
+      detallesConCompra,
+      {
+        transaction: t,
+        returning: true,
+      }
+    );
+
+    // Insertar stock por sucursal
+    const stockData = [];
+    console.log('stokc Suc ... ', stockSuc);
+
+    for (const [productoId, stocks] of Object.entries(stockSuc)) {
+      stocks.forEach(({ sucursal, stock }) => {
+        const detalle = detallesInsertados.find(
+          (d) => d.producto_id == productoId
+        );
+        if (detalle) {
+          stockData.push({
+            stock,
+            productoId: productoId,
+            id_sucursal: sucursal,
+            id_detalle_compra: detalle.id_detalle,
+          });
+        }
+      });
+    }
+
+    console.log('stockData', stockData);
+
+    await StockSucursal.bulkCreate(stockData, { transaction: t });
+
+    await t.commit(); // Confirmar transacción
     res.status(201).json({ message: 'Compra registrada con éxito' });
   } catch (error) {
     await t.rollback(); // Revertir si hay error
@@ -137,4 +202,46 @@ const eliminarCompra = async (req, res) => {
   }
 };
 
-module.exports = { addCompra, comprasDesdeHasta, eliminarCompra };
+const detalleCompra = async (req, res) => {
+  const id_compra = req.params.id_compra;
+
+  try {
+    const compra = await Compra.findOne({
+      where: { id_compra },
+      include: [
+        {
+          model: Proveedores,
+          as: 'proveedor',
+          attributes: ['nombre'],
+        },
+        {
+          model: DetalleCompra,
+          as: 'detalles',
+          include: [
+            {
+              model: Productos,
+              as: 'producto',
+              attributes: ['nombre'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!compra) {
+      return res.status(404).json({ error: 'Compra no encontrada' });
+    }
+
+    res.status(200).json(compra);
+  } catch (error) {
+    console.error('Error al obtener los detalles de la compra:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = {
+  addCompra,
+  comprasDesdeHasta,
+  eliminarCompra,
+  detalleCompra,
+};

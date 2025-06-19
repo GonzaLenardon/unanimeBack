@@ -1,15 +1,16 @@
 const { Model, DataTypes } = require('sequelize');
 const db = require('../db/conection');
 
-class Compra extends Model {}
+class Gastos extends Model {}
 
-Compra.init(
+Gastos.init(
   {
-    id_compra: {
+    id_tipo: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
+
     fecha: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
@@ -18,12 +19,12 @@ Compra.init(
       type: DataTypes.FLOAT,
       allowNull: false,
     },
-    numero: {
+    observaciones: {
       type: DataTypes.STRING,
       allowNull: false,
     },
   },
-  { sequelize: db, modelName: 'compra' }
+  { sequelize: db, modelName: 'gastos' }
 );
 
-module.exports = Compra;
+module.exports = Gastos;

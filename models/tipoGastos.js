@@ -3,26 +3,21 @@
 const db = require('../db/conection');
 const S = require('sequelize');
 
-class TipoVenta extends S.Model {}
+class TipoGastos extends S.Model {}
 
-TipoVenta.init(
+TipoGastos.init(
   {
     id_tipo: {
       type: S.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    tipoVenta: {
+    tipoGasto: {
       type: S.STRING,
       allowNull: false,
     },
-
-    porcentajeVenta: {
-      type: S.FLOAT,
-      allowNull: false,
-    },
   },
-  { sequelize: db, modelName: 'tipoventa' }
+  { sequelize: db, modelName: 'tipoGastos' }
 );
 
-module.exports = TipoVenta;
+module.exports = TipoGastos;

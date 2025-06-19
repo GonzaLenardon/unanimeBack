@@ -1,11 +1,19 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config(); // Para leer las variables de entorno
 
+const isProduction = process.env.NODE_ENV === 'production'; //Ese bloque es necesario solo para servicios como Render
+console.log(isProduction);
+
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
-  dialectOptions: {
-    ssl: { require: true, rejectUnauthorized: false }, // Necesario para Render
-  },
+  dialectOptions: isProduction
+    ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      }
+    : {},
   logging: false, // Para evitar logs innecesarios
 });
 

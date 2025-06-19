@@ -10,6 +10,10 @@ DetalleVentas.init(
       primaryKey: true,
       autoIncrement: true,
     },
+    nombreProducto: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     fecha: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -22,6 +26,11 @@ DetalleVentas.init(
     },
     total: {
       type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    id_sucursal: {
+      // 👈 AGREGAR ESTO
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
   },

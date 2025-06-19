@@ -1,4 +1,4 @@
-const { Usuarios } = require('../models');
+const { Usuarios, Sucursal } = require('../models');
 const { validateToken, generateToken } = require('../config/token');
 const jwt = require('jsonwebtoken');
 const bc = require('bcrypt');
@@ -20,7 +20,7 @@ const User = async (req, res) => {
 const addUser = async (req, res) => {
   console.log('paso x aca', req.body);
   try {
-    const { nombre, password } = req.body;
+    const { nombre, password, rol, id_sucursal } = req.body;
     console.log('body', req.body);
 
     const user = await Usuarios.findOne({ where: { nombre } });
@@ -29,7 +29,12 @@ const addUser = async (req, res) => {
       return res.status(400).json({ message: '¡Usuario ya existente!' });
     }
 
-    const newUser = await Usuarios.create({ nombre, password });
+    const newUser = await Usuarios.create({
+      nombre,
+      password,
+      rol,
+      id_sucursal,
+    });
     res.status(201).json({ message: 'Usuario creado exitosamente', newUser });
   } catch (error) {
     console.error('Error al agregar usuario:', error);
@@ -78,7 +83,12 @@ const login = async (req, res) => {
         maxAge: 4 * 60 * 60 * 1000,
       })
       .status(200)
-      .json({ user: nombre, id: user.id_usuario, mensaje: 'Autorizado' });
+      .json({
+        user: nombre,
+        id: user.id_usuario,
+        mensaje: 'Autorizado',
+        Sucursal: user.id_sucursal,
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error en el servidor' });

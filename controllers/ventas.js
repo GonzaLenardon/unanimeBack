@@ -4,6 +4,7 @@ const {
   Productos,
   Usuarios,
   DetalleCompra,
+  StockSucursal,
 } = require('../models');
 const db = require('../db/conection');
 const { fn, col, where, Op } = require('sequelize');
@@ -82,7 +83,9 @@ const desdeHasta = async (req, res) => {
   }
 };
 
-const addVentas = async (req, res) => {
+/* const addVentas = async (req, res) => {
+  console.log('haber que llega', req.body);
+
   const { id_usuario, id_tipo_venta, total, detalles } = req.body;
 
   try {
@@ -155,9 +158,220 @@ const addVentas = async (req, res) => {
       .status(500)
       .json({ error: 'Error al registrar una venta', details: error.message });
   }
+}; */
+
+/* const registrarVenta = async (req, res) => {
+  const t = await db.transaction();
+  console.log('haber que recibo che .. ', req.body);
+  try {
+    const { id_usuario, id_sucursal, tipo_venta, detalles } = req.body;
+    const fecha = new Date();
+    let totalVenta = 0;
+
+    // Crear venta
+    const venta = await Ventas.create(
+      {
+        fecha,
+        total: 0, // se actualiza después
+        id_usuario,
+        id_tipo_venta: tipo_venta,
+        id_sucursal,
+      },
+      { transaction: t }
+    );
+
+    // Iterar detalles
+    for (const item of detalles) {
+      let cantidadRestante = item.cantidad;
+
+      // Buscar lotes disponibles en la sucursal (FIFO: primero el más viejo)
+      const lotes = await StockSucursal.findAll({
+        where: {
+          id_sucursal,
+        },
+        include: {
+          model: DetalleCompra,
+          as: 'sucursalDetalleToCompra', // Alias correcto
+          where: { producto_id: item.id_producto },
+        },
+        order: [
+          [
+            { model: DetalleCompra, as: 'sucursalDetalleToCompra' },
+            'createdAt',
+            'ASC',
+          ],
+        ],
+        transaction: t,
+      });
+
+      for (const lote of lotes) {
+        if (cantidadRestante <= 0) break;
+        const disponible = lote.stock;
+
+        if (disponible > 0) {
+          const aDescontar = Math.min(disponible, cantidadRestante);
+
+          // Crear detalle de venta
+          const producto = await Productos.findByPk(item.id_producto);
+          const total = producto.precio_venta * aDescontar;
+
+          await DetalleVentas.create(
+            {
+              id_venta: venta.id_venta,
+              id_producto: producto.id_producto,
+              nombreProducto: producto.nombre,
+              cantidad: aDescontar,
+              total,
+              fecha,
+              id_sucursal,
+              id_detalle_compra: lote.id_detalle_compra,
+            },
+            { transaction: t }
+          );
+
+          // Descontar stock
+          lote.stock -= aDescontar;
+          await lote.save({ transaction: t });
+
+          // Acumular total de la venta
+          totalVenta += total;
+          cantidadRestante -= aDescontar;
+        }
+      }
+
+      if (cantidadRestante > 0) {
+        throw new Error(
+          `Stock insuficiente para el producto ${item.id_producto} en la sucursal ${id_sucursal}`
+        );
+      }
+    }
+
+    // Actualizar total de la venta
+    venta.total = totalVenta;
+    await venta.save({ transaction: t });
+
+    await t.commit();
+    console.log('✅ Venta registrada correctamente');
+  } catch (error) {
+    await t.rollback();
+    console.error('❌ Error al registrar la venta:', error.message);
+  }
+}; */
+
+const registrarVenta = async (req, res) => {
+  const t = await db.transaction();
+  try {
+    const {
+      id_usuario,
+      id_sucursal,
+      id_tipo_venta,
+      porcentaje_aplicado,
+      detalles,
+    } = req.body;
+
+    console.log('mmmm ', req.body);
+
+    const fecha = new Date();
+
+    // Calcular total bruto
+    const totalBruto = detalles.reduce(
+      (acc, item) => acc + item.precio_venta * item.cantidad,
+      0
+    );
+
+    const montoDescuento = (totalBruto * porcentaje_aplicado) / 100;
+    const totalFinal = totalBruto - montoDescuento;
+
+    // Crear venta con descuento aplicado
+    const venta = await Ventas.create(
+      {
+        fecha,
+        total: totalFinal,
+        porcentaje_aplicado: porcentaje_aplicado,
+        monto_descuento: montoDescuento,
+        id_usuario,
+        id_sucursal,
+        id_tipo_venta: id_tipo_venta, // ⚠️ Asegurate que el campo sea correcto según tu modelo
+      },
+      { transaction: t }
+    );
+
+    // Iterar detalles
+    for (const item of detalles) {
+      let cantidadRestante = item.cantidad;
+
+      // Buscar lotes FIFO
+      const lotes = await StockSucursal.findAll({
+        where: { id_sucursal },
+        include: {
+          model: DetalleCompra,
+          as: 'sucursalDetalleToCompra',
+          where: { producto_id: item.id_producto },
+        },
+        order: [
+          [
+            { model: DetalleCompra, as: 'sucursalDetalleToCompra' },
+            'createdAt',
+            'ASC',
+          ],
+        ],
+        transaction: t,
+      });
+
+      for (const lote of lotes) {
+        if (cantidadRestante <= 0) break;
+        const disponible = lote.stock;
+
+        if (disponible > 0) {
+          const aDescontar = Math.min(disponible, cantidadRestante);
+
+          const producto = await Productos.findByPk(item.id_producto);
+
+          const precioFinalUnitario =
+            producto.precio_venta -
+            (producto.precio_venta * porcentaje_aplicado) / 100;
+
+          const total = precioFinalUnitario * aDescontar;
+
+          await DetalleVentas.create(
+            {
+              id_venta: venta.id_venta,
+              id_producto: producto.id_producto,
+              nombreProducto: producto.nombre,
+              cantidad: aDescontar,
+              total,
+              fecha,
+              id_sucursal,
+              id_detalle_compra: lote.id_detalle_compra,
+            },
+            { transaction: t }
+          );
+
+          // Descontar del lote
+          lote.stock -= aDescontar;
+          await lote.save({ transaction: t });
+
+          cantidadRestante -= aDescontar;
+        }
+      }
+
+      if (cantidadRestante > 0) {
+        throw new Error(
+          `Stock insuficiente para el producto ${item.id_producto} en la sucursal ${id_sucursal}`
+        );
+      }
+    }
+
+    await t.commit();
+    res.status(200).json({ ok: true, venta });
+  } catch (error) {
+    await t.rollback();
+    console.error('❌ Error al registrar venta:', error.message);
+    res.status(500).json({ ok: false, error: error.message });
+  }
 };
 
-const deleteVenta = async (req, res) => {
+/* const deleteVenta = async (req, res) => {
   const { id } = req.params; // ID de la venta a eliminar
   console.log('REQ.Params', req.params);
 
@@ -179,6 +393,9 @@ const deleteVenta = async (req, res) => {
       await t.rollback();
       return res.status(404).json({ error: 'Venta no encontrada' });
     }
+
+    console.log('hasta aca llego ', venta);
+    console.log('detalles compras', venta.detalles);
 
     // Restaurar stock en los lotes originales
     for (const detalle of venta.detalles) {
@@ -216,6 +433,105 @@ const deleteVenta = async (req, res) => {
       details: error.message,
     });
   }
+}; */
+
+const deleteVenta = async (req, res) => {
+  const { id } = req.params;
+
+  const t = await db.transaction();
+  try {
+    const venta = await Ventas.findByPk(id, { transaction: t });
+    if (!venta) return res.status(404).json({ error: 'Venta no encontrada' });
+
+    const detalles = await DetalleVentas.findAll({
+      where: { id_venta: id },
+      transaction: t,
+    });
+
+    console.log('Detalles sssss ..... ', detalles);
+    for (const detalle of detalles) {
+      // Verificar que exista el id_detalle_compra
+      if (!detalle.id_detalle_compra) {
+        throw new Error(
+          `Detalle sin id_detalle_compra, no se puede restaurar stock`
+        );
+      }
+
+      const stock = await StockSucursal.findOne({
+        where: {
+          id_sucursal: detalle.id_sucursal,
+          id_detalle_compra: detalle.id_detalle_compra,
+        },
+        transaction: t,
+      });
+
+      if (stock) {
+        stock.stock += detalle.cantidad;
+        await stock.save({ transaction: t });
+      } else {
+        // Si no existía, lo creamos
+        await StockSucursal.create(
+          {
+            id_sucursal: detalle.id_sucursal,
+            id_detalle_compra: detalle.id_detalle_compra,
+            stock: detalle.cantidad,
+          },
+          { transaction: t }
+        );
+      }
+
+      await detalle.destroy({ transaction: t });
+    }
+
+    await venta.destroy({ transaction: t });
+    await t.commit();
+
+    return res
+      .status(200)
+      .json({ ok: true, mensaje: 'Venta eliminada y stock restaurado' });
+  } catch (error) {
+    await t.rollback();
+    console.error('❌ Error al eliminar venta:', error.message);
+    return res.status(500).json({ ok: false, error: error.message });
+  }
 };
 
-module.exports = { allVentas, addVentas, desdeHasta, deleteVenta };
+const ventaDetalles = async (req, res) => {
+  const id_venta = req.params.id_venta;
+
+  try {
+    const ventasDeProducto = await Ventas.findOne({
+      include: [
+        {
+          model: DetalleVentas,
+          as: 'detalles',
+          include: [
+            {
+              model: Productos,
+              as: 'producto', // 👈 debe coincidir con el alias definido en la relación
+              attributes: ['nombre'], // Traemos solo el nombre
+            },
+          ],
+        },
+      ],
+      where: {
+        id_venta: id_venta,
+      },
+      /* order: [['id_venta', 'ASC']], */
+    });
+
+    res.status(200).send(ventasDeProducto);
+  } catch (error) {
+    console.error('Error al obtener ventas del producto:', error);
+    res.status(500).json({ error: 'Error al obtener ventas del producto' });
+  }
+};
+
+module.exports = {
+  allVentas,
+  /*  addVentas, */
+  desdeHasta,
+  deleteVenta,
+  registrarVenta,
+  ventaDetalles,
+};
