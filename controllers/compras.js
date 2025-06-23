@@ -41,8 +41,8 @@ const { Op } = require('sequelize');
   }
 }; */
 
-const addCompra = async (req, res) => {
-  const { monto, proveedor_id, id_usuario, numero, detalles, stockSuc } =
+/* const addCompra = async (req, res) => {
+  const { monto, proveedor_id, id_usuario, numero, detalles } =
     req.body;
 
   const t = await db.transaction(); // Iniciar transacción
@@ -100,6 +100,72 @@ const addCompra = async (req, res) => {
     res.status(201).json({ message: 'Compra registrada con éxito' });
   } catch (error) {
     await t.rollback(); // Revertir si hay error
+    console.error('Error al registrar compra:', error);
+    res.status(500).json({ error: 'Error al registrar la compra' });
+  }
+}; */
+
+const addCompra = async (req, res) => {
+  const { monto, proveedor_id, id_usuario, numero, detalles } = req.body;
+
+  const t = await db.transaction();
+  try {
+    const hoy = new Date();
+    const tresHorasEnMs = 3 * 60 * 60 * 1000;
+    const fecha = new Date(hoy.getTime() - tresHorasEnMs);
+
+    // Crear la compra
+    const nuevaCompra = await Compra.create(
+      { fecha, monto, numero, id_usuario, proveedor_id },
+      { transaction: t }
+    );
+
+    // Agregar el id_compra a cada detalle
+    const detallesConCompra = detalles.map((detalle) => ({
+      producto_id: detalle.producto_id,
+      cantidad: detalle.cantidad,
+      costo: detalle.costo,
+      nombreProducto: detalle.nombreProducto,
+      vencimiento: detalle.vencimiento,
+      compra_id: nuevaCompra.id_compra,
+    }));
+
+    // Insertar los detalles de la compra
+    const detallesInsertados = await DetalleCompra.bulkCreate(
+      detallesConCompra,
+      {
+        transaction: t,
+        returning: true,
+      }
+    );
+
+    // Armar los registros de stock por sucursal
+    const stockData = [];
+
+    for (const detalle of detalles) {
+      const detalleInsertado = detallesInsertados.find(
+        (d) => d.producto_id === detalle.producto_id
+      );
+
+      if (!detalleInsertado) continue;
+
+      for (const { sucursal, stock } of detalle.stock_por_sucursal) {
+        stockData.push({
+          stock,
+          productoId: detalle.producto_id,
+          id_sucursal: sucursal,
+          id_detalle_compra: detalleInsertado.id_detalle,
+        });
+      }
+    }
+
+    // Insertar stock en StockSucursal
+    await StockSucursal.bulkCreate(stockData, { transaction: t });
+
+    await t.commit();
+    res.status(201).json({ message: 'Compra registrada con éxito' });
+  } catch (error) {
+    await t.rollback();
     console.error('Error al registrar compra:', error);
     res.status(500).json({ error: 'Error al registrar la compra' });
   }

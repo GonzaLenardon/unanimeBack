@@ -1,6 +1,9 @@
 const { Router } = require('express');
 const { authMiddleware } = require('../controllers/authMiddleware');
 const router = Router();
+
+const { addSucursal } = require('../controllers/sucursal');
+
 const {
   allUsers,
   User,
@@ -52,7 +55,7 @@ const {
   resumenDesdeHasta,
 } = require('../controllers/listados');
 const { allTipoVentas } = require('../controllers/tipoVentas');
-const { verStokc, verStock } = require('../controllers/stock');
+const { verStock, transferirStock } = require('../controllers/stock');
 
 router.get('/user', allUsers);
 router.get('/user/me', authMiddleware, getUser);
@@ -93,5 +96,9 @@ router.get('/compra/:id_producto', comprasProducto);
 router.get('/compra/detalles/:id_compra', detalleCompra);
 
 router.get('/tipoventa', allTipoVentas);
+
+router.post('/stock/transferir', transferirStock);
+
+router.post('/sucursal', addSucursal);
 
 module.exports = router;
