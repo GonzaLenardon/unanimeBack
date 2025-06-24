@@ -47,6 +47,10 @@ const transferirStock = async (req, res) => {
 
   const t = await db.transaction();
 
+  const hoy = new Date();
+  const tresHorasEnMs = 3 * 60 * 60 * 1000;
+  const fecha = new Date(hoy.getTime() - tresHorasEnMs);
+
   try {
     // Validaciones básicas
     if (!origenId || !destinoId || !productoId || !cantidad || cantidad <= 0) {
@@ -128,7 +132,7 @@ const transferirStock = async (req, res) => {
       {
         sucursal_origen_id: origenId,
         sucursal_destino_id: destinoId,
-        fecha: new Date(),
+        fecha: fecha,
         id_usuario: id_usuario, // Solo si lo agregás al modelo
       },
       { transaction: t }

@@ -203,33 +203,6 @@ const updateProductos = async (req, res) => {
   }
 };
 
-/* const comprasProducto = async (req, res) => {
-  const id_producto = req.params.id_producto;
-  try {
-    const comprasDeProducto = await DetalleCompra.findAll({
-      include: [
-        {
-          model: Productos,
-          as: 'producto',
-          attributes: [],
-        },
-      ],
-      where: {
-        producto_id: id_producto,
-      },
-
-      order: [['id_detalle', 'ASC']],
-    });
-
-    // Mover este console.log aquí si querés ver los datos
-
-    res.status(200).send(comprasDeProducto);
-  } catch (error) {
-    console.error('Error al obtener productos:', error);
-    res.status(500).json({ error: 'Error al obtener productos' });
-  }
-}; */
-
 const comprasProducto = async (req, res) => {
   const id_producto = req.params.id_producto;
   try {

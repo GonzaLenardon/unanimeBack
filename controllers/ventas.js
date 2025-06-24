@@ -271,7 +271,9 @@ const registrarVenta = async (req, res) => {
 
     console.log('mmmm ', req.body);
 
-    const fecha = new Date();
+    const hoy = new Date();
+    const tresHorasEnMs = 3 * 60 * 60 * 1000;
+    const fecha = new Date(hoy.getTime() - tresHorasEnMs);
 
     // Calcular total bruto
     const totalBruto = detalles.reduce(
