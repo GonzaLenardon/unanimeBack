@@ -21,6 +21,10 @@ TipoVenta.init(
       type: S.FLOAT,
       allowNull: false,
     },
+    habilitado: {
+      type: S.BOOLEAN,
+      allowNull: false,
+    },
   },
   { sequelize: db, modelName: 'tipoventa' }
 );

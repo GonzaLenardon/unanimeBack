@@ -48,13 +48,18 @@ const {
   addVentaConDetalles,
 } = require('../controllers/detalleVentas');
 
+const {
+  allTipoVentas,
+  addTipoVenta,
+  updateTipoVenta,
+} = require('../controllers/tipoVentas');
+
 const { sequelize } = require('sequelize');
 const {
   resumenVentas,
   ventasDesdeHasta,
   resumenDesdeHasta,
 } = require('../controllers/listados');
-const { allTipoVentas } = require('../controllers/tipoVentas');
 const { verStock, transferirStock } = require('../controllers/stock');
 
 router.get('/user', allUsers);
@@ -96,6 +101,8 @@ router.get('/compra/:id_producto', comprasProducto);
 router.get('/compra/detalles/:id_compra', detalleCompra);
 
 router.get('/tipoventa', allTipoVentas);
+router.post('/tipoventa', addTipoVenta);
+router.put('/tipoventa', updateTipoVenta);
 
 router.post('/stock/transferir', transferirStock);
 
