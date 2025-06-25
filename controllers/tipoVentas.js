@@ -11,7 +11,7 @@ const allTipoVentas = async (req, res) => {
 
 const addTipoVenta = async (req, res) => {
   try {
-    const { tipoVenta, porcentajeVenta } = req.body;
+    const { tipoVenta, porcentajeVenta, habilitado } = req.body;
 
     console.log('body', req.body);
 
@@ -24,6 +24,7 @@ const addTipoVenta = async (req, res) => {
     const newTipoVenta = await TipoVenta.create({
       tipoVenta,
       porcentajeVenta,
+      habilitado,
     });
 
     res.status(201).json({
