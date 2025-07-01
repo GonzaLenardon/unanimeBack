@@ -77,8 +77,8 @@ TransferenciaDetalle.belongsTo(Productos, {
   as: 'producto',
 });
 
-TipoGastos.hasMany(Gastos, { foreignKey: 'id_tipo', as: 'gastos' });
-Gastos.belongsTo(TipoGastos, { foreignKey: 'id_tipo', as: 'tipoGasto' });
+TipoGastos.hasMany(Gastos, { foreignKey: 'id_tipogasto', as: 'gastos' });
+Gastos.belongsTo(TipoGastos, { foreignKey: 'id_tipogasto', as: 'tipogasto' });
 
 DetalleCompra.hasMany(StockSucursal, {
   foreignKey: 'id_detalle_compra',

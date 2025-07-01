@@ -8,6 +8,8 @@ const {
 } = require('../models');
 const sequelize = require('../db/conection.js');
 
+const { generarCodigo } = require('../utils/generarCodigo.js');
+
 const addProductos = async (req, res) => {
   try {
     let {
@@ -22,7 +24,6 @@ const addProductos = async (req, res) => {
       precio_venta,
       observaciones,
     } = req.body;
-    console.log('eeeeeee', req.body);
 
     // Asegurarse de que los valores tengan 2 decimales
     costo = parseFloat(costo).toFixed(2);
@@ -43,7 +44,25 @@ const addProductos = async (req, res) => {
       observaciones,
     });
 
-    console.log(newProd);
+    console.log('uno');
+    const id = newProd.id_producto;
+
+    const prodPlano = newProd.get({ plain: true });
+    console.log('dos');
+
+    // Paso 2: Generar código
+    const codigoGenerado = await generarCodigo(prodPlano); // ahora ya tenés todos los datos
+
+    // Paso 3: Actualizar con código
+    console.log('Hasta aca venimoms bien ', prodPlano);
+    console.log('Hasta aca venimoms bien ', codigoGenerado, id);
+
+    const prodUp = await Productos.update(
+      { codigo: codigoGenerado },
+      { where: { id_producto: id } }
+    );
+
+    console.log('Esto mando al front', prodUp);
 
     res.status(201).send(newProd);
   } catch (error) {
@@ -169,7 +188,7 @@ const updateProductos = async (req, res) => {
     observaciones,
   } = req.body;
 
-  console.log('que llega', req.body);
+  const codGenerado = await generarCodigo(req.body);
 
   try {
     const productoExistente = await Productos.findByPk(id_producto);
@@ -180,7 +199,7 @@ const updateProductos = async (req, res) => {
 
     await Productos.update(
       {
-        codigo,
+        codigo: codGenerado,
         nombre,
         marca,
         modelo,

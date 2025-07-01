@@ -61,6 +61,13 @@ const {
   resumenDesdeHasta,
 } = require('../controllers/listados');
 const { verStock, transferirStock } = require('../controllers/stock');
+const {
+  allTipoGastos,
+  addTipoGastos,
+  updateTipoGasto,
+} = require('../controllers/tipoGastos');
+
+const { addGastos, allGastos, updateGastos } = require('../controllers/gastos');
 
 router.get('/user', allUsers);
 router.get('/user/me', authMiddleware, getUser);
@@ -103,6 +110,14 @@ router.get('/compra/detalles/:id_compra', detalleCompra);
 router.get('/tipoventa', allTipoVentas);
 router.post('/tipoventa', addTipoVenta);
 router.put('/tipoventa', updateTipoVenta);
+
+router.get('/gastos', allGastos);
+router.post('/gastos', addGastos);
+router.put('/gastos', updateGastos);
+
+router.get('/tipogasto', allTipoGastos);
+router.post('/tipogasto', addTipoGastos);
+router.put('/tipogasto', updateTipoGasto);
 
 router.post('/stock/transferir', transferirStock);
 

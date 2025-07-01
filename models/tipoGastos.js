@@ -7,7 +7,7 @@ class TipoGastos extends S.Model {}
 
 TipoGastos.init(
   {
-    id_tipo: {
+    id_tipogasto: {
       type: S.INTEGER,
       primaryKey: true,
       autoIncrement: true,

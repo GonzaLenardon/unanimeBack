@@ -5,7 +5,7 @@ class Gastos extends Model {}
 
 Gastos.init(
   {
-    id_tipo: {
+    id_gasto: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
@@ -21,6 +21,10 @@ Gastos.init(
     },
     observaciones: {
       type: DataTypes.STRING,
+      allowNull: false,
+    },
+    id_tipogasto: {
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
   },

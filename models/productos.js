@@ -54,7 +54,7 @@ Productos.init(
     },
     observaciones: {
       type: S.STRING,
-      allowNull: false,
+      allowNull: true,
     },
   },
   { sequelize: db, modelName: 'productos' }
