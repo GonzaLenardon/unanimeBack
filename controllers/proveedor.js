@@ -2,7 +2,7 @@ const { Proveedores } = require('../models');
 
 const addProveedor = async (req, res) => {
   try {
-    const { nombre, direccion, telefono } = req.body;
+    const { nombre, direccion, telefono, email, contacto } = req.body;
     console.log('body', req.body);
 
     const proveedor = await Proveedores.findOne({ where: { nombre } });
@@ -15,6 +15,8 @@ const addProveedor = async (req, res) => {
       nombre,
       direccion,
       telefono,
+      email,
+      contacto,
     });
     res
       .status(201)

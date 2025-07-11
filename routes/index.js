@@ -2,7 +2,11 @@ const { Router } = require('express');
 const { authMiddleware } = require('../controllers/authMiddleware');
 const router = Router();
 
-const { addSucursal } = require('../controllers/sucursal');
+const {
+  addSucursal,
+  allSucursal,
+  getSucursal,
+} = require('../controllers/sucursal');
 
 const {
   allUsers,
@@ -12,6 +16,7 @@ const {
   resetPassword,
   getUser,
   logout,
+  upUser,
 } = require('../controllers/usuarios');
 const {
   allVentas,
@@ -67,11 +72,17 @@ const {
   updateTipoGasto,
 } = require('../controllers/tipoGastos');
 
-const { addGastos, allGastos, updateGastos } = require('../controllers/gastos');
+const {
+  addGastos,
+  allGastos,
+  updateGastos,
+  resumenGastos,
+} = require('../controllers/gastos');
 
 router.get('/user', allUsers);
 router.get('/user/me', authMiddleware, getUser);
 router.post('/user', addUser);
+router.put('/user', upUser);
 router.post('/user/login', login);
 router.post('/user/logout', logout);
 router.post('/user/reset', resetPassword);
@@ -114,6 +125,7 @@ router.put('/tipoventa', updateTipoVenta);
 router.get('/gastos', allGastos);
 router.post('/gastos', addGastos);
 router.put('/gastos', updateGastos);
+router.post('/gastos/desdehasta', resumenGastos);
 
 router.get('/tipogasto', allTipoGastos);
 router.post('/tipogasto', addTipoGastos);
@@ -122,5 +134,7 @@ router.put('/tipogasto', updateTipoGasto);
 router.post('/stock/transferir', transferirStock);
 
 router.post('/sucursal', addSucursal);
+router.get('/sucursal', allSucursal);
+router.get('/sucursal/:id_usuario', getSucursal);
 
 module.exports = router;

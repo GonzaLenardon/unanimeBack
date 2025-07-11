@@ -5,7 +5,15 @@ const bc = require('bcrypt');
 
 const allUsers = async (req, res) => {
   try {
-    const usuarios = await Usuarios.findAll();
+    const usuarios = await Usuarios.findAll({
+      include: [
+        {
+          model: Sucursal,
+          as: 'sucursal',
+          attributes: ['nombre'],
+        },
+      ],
+    });
     res.status(200).json(usuarios);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener usuarios' });
@@ -17,10 +25,38 @@ const User = async (req, res) => {
   res.send(id);
 };
 
+const upUser = async (req, res) => {
+  try {
+    const { id_usuario, nombre, rol, id_sucursal } = req.body;
+    console.log('bodycito ', req.body);
+
+    const user = await Usuarios.findOne({ where: { id_usuario } });
+    console.log('usuario', user);
+
+    if (!user) {
+      return res.status(400).json({ message: '¡Usuario NO está registrado!' });
+    }
+
+    await Usuarios.update(
+      { nombre, rol, id_sucursal },
+      { where: { id_usuario } }
+    );
+
+    res.status(201).json({ message: 'Usuario actualizado exitosamente' });
+  } catch (error) {
+    console.error('Error al actualizar usuario:', error);
+    res
+      .status(500)
+      .json({ error: 'Error en el servidor', details: error.message });
+  }
+};
+
 const addUser = async (req, res) => {
   console.log('paso x aca', req.body);
   try {
-    const { nombre, password, rol, id_sucursal } = req.body;
+    const { nombre, rol, id_sucursal } = req.body;
+    const password = req.body.password || '123456'; // 👈 default
+
     console.log('body', req.body);
 
     const user = await Usuarios.findOne({ where: { nombre } });
@@ -154,4 +190,5 @@ module.exports = {
   resetPassword,
   getUser,
   logout,
+  upUser,
 };

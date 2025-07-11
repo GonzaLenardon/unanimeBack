@@ -27,6 +27,11 @@ Gastos.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
+    id_sucursal: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
   },
   { sequelize: db, modelName: 'gastos' }
 );

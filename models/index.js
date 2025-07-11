@@ -123,6 +123,16 @@ DetalleVentas.belongsTo(Sucursal, {
   as: 'detalleVentasToSucursal',
 });
 
+Gastos.belongsTo(Sucursal, {
+  foreignKey: 'id_sucursal',
+  as: 'sucursal',
+});
+
+Sucursal.hasMany(Gastos, {
+  foreignKey: 'id_sucursal',
+  as: 'gastos',
+});
+
 module.exports = {
   Usuarios,
   Ventas,
