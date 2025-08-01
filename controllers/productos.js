@@ -222,6 +222,31 @@ const updateProductos = async (req, res) => {
   }
 };
 
+const actualizarCodigosBarras = async (req, res) => {
+  try {
+    // 1. Obtener todos los productos
+    const productos = await Productos.findAll();
+
+    // 2. Recorrer y actualizar cada uno
+    for (const prod of productos) {
+      const nuevoCodigo = await generarCodigo(prod.get({ plain: true }));
+      await prod.update({ codigo: nuevoCodigo });
+      console.log(`Producto ID ${prod.id_producto} → ${nuevoCodigo}`);
+    }
+
+    console.log('✅ Códigos de barra actualizados correctamente.');
+    return res.status(200).json({
+      message: 'Códigos de barra actualizados correctamente',
+      total: productos.length,
+    });
+  } catch (error) {
+    console.error('❌ Error al actualizar códigos de barra:', error);
+    return res.status(500).json({
+      error: 'Error en el servidor',
+      details: error.message,
+    });
+  }
+};
 const comprasProducto = async (req, res) => {
   const id_producto = req.params.id_producto;
   try {
@@ -294,4 +319,5 @@ module.exports = {
   comprasProducto,
   ventasProducto,
   productosStock,
+  actualizarCodigosBarras,
 };

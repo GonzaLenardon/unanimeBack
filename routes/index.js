@@ -42,6 +42,7 @@ const {
   comprasProducto,
   productosStock,
   ventasProducto,
+  actualizarCodigosBarras,
 } = require('../controllers/productos');
 const {
   addProveedor,
@@ -112,6 +113,7 @@ router.get('/productos', productosStock);
 /* router.get('/productos/:id_producto', comprasProducto); */
 router.post('/productos', addProductos);
 router.put('/productos/', updateProductos);
+router.put('/productos/upcodigobarra', actualizarCodigosBarras);
 
 router.get('/proveedor', allProveedores);
 router.post('/proveedor', addProveedor);
