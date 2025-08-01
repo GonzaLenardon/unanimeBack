@@ -1,16 +1,26 @@
 const generarCodigo = async (producto) => {
-  console.log('que llega a generar ', producto);
-  const { id_producto, nombre, marca, modelo, talle, color } = producto;
+  const { id_producto, nombre, marca, talle } = producto;
 
-  const inicial = nombre?.substring(0, 3)?.toUpperCase() || '';
-  const marcaCod = marca?.substring(0, 3)?.toUpperCase() || '';
-  const modeloCod = modelo?.substring(0, 2)?.toUpperCase() || '';
-  const colorCod = color?.substring(0, 2)?.toUpperCase() || '';
-  const talleCod = talle?.toString().toUpperCase();
+  const nomCod = (nombre || '')
+    .substring(0, 3)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
 
+  const marCod = (marca || '')
+    .substring(0, 3)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+
+  const talCod = (talle || '')
+    .toString()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .substring(0, 3);
+
+  // Formato final: ID(4) + NOM(3) + MAR(3) + TAL(3) = máx. 13
   return `${id_producto
     .toString()
-    .padStart(4, '0')}${inicial}${marcaCod}${modeloCod}${colorCod}${talleCod}`;
+    .padStart(4, '0')}${nomCod}${marCod}${talCod}`;
 };
 
 module.exports = { generarCodigo };
