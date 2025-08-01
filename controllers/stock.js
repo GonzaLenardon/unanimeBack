@@ -1,4 +1,4 @@
-const { Sequelize, Op } = require('sequelize');
+const { Sequelize, Op, QueryTypes } = require('sequelize');
 const {
   DetalleCompra,
   Productos,
@@ -8,7 +8,8 @@ const {
 } = require('../models');
 const db = require('../db/conection');
 
-const verStock = async (req, res) => {
+/* const verStock = async (req, res) => {
+  const idSucursal = req.params.sucursal;
   try {
     const [result] = await db.query(`
       SELECT 
@@ -31,6 +32,64 @@ const verStock = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener el stock por sucursal:', error);
     res.status(500).json({ error: 'Error al obtener el stock por sucursal' });
+  }
+}; */
+
+const verStock = async (req, res) => {
+  const idSucursal = req.params.sucursal;
+
+  try {
+    const result = await db.query(
+      `
+    SELECT 
+    p.id_producto,
+    p.nombre,
+    p.codigo,
+    p.marca,
+    p.modelo,
+    p.talle,
+    p.color,
+    p.precio_venta,
+    su.id_sucursal,
+    su.nombre AS nombre_sucursal,
+    SUM(ss.stock) AS stock_total
+FROM productos p
+INNER JOIN detallecompras dc 
+    ON p.id_producto = dc.producto_id
+INNER JOIN stock_sucursal ss 
+    ON dc.id_detalle = ss.id_detalle_compra
+INNER JOIN sucursales su 
+    ON su.id_sucursal = ss.id_sucursal
+WHERE su.id_sucursal = :idSucursal
+  AND (
+    LOWER(p.nombre) LIKE '%jean%' 
+    OR LOWER(p.nombre) LIKE '%remera%'
+  )
+GROUP BY 
+    p.id_producto,
+    p.nombre,
+    p.codigo,
+    p.marca,
+    p.modelo,
+    p.talle,
+    p.color,
+    p.precio_venta,
+    su.id_sucursal,
+    su.nombre
+HAVING SUM(ss.stock) < 10
+ORDER BY stock_total, p.nombre, su.nombre;
+
+      `,
+      {
+        replacements: { idSucursal },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('❌ Error detallado:', error);
+    res.status(500).json({ error: error.message });
   }
 };
 

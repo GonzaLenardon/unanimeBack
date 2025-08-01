@@ -5,6 +5,9 @@ const {
   Usuarios,
   DetalleCompra,
   StockSucursal,
+  Cambio,
+  DetalleCambio,
+  TipoVenta,
 } = require('../models');
 const db = require('../db/conection');
 const { fn, col, where, Op } = require('sequelize');
@@ -37,9 +40,9 @@ const allVentas = async (req, res) => {
   }
 };
 
+/* Funciona perfecto pero ahora agregamos include Cambios 
 const desdeHasta = async (req, res) => {
-  /*  const { fecha } = req.query;
-  console.log('fehca en all ventas', fecha); */
+
 
   try {
     const { desde, hasta } = req.body;
@@ -75,6 +78,190 @@ const desdeHasta = async (req, res) => {
     });
 
     res.status(200).json(ventas);
+  } catch (error) {
+    console.error('Error al obtener ventas:', error);
+    res
+      .status(500)
+      .json({ error: 'Error al obtener ventas', details: error.message });
+  }
+}; */
+
+const desdeHasta = async (req, res) => {
+  try {
+    const { desde, hasta } = req.body;
+
+    if (!desde || !hasta) {
+      return res.status(400).json({ error: 'Faltan fechas desde o hasta' });
+    }
+
+    const desdeFecha = `${desde}T00:00:00.000Z`;
+    const hastaFecha = `${hasta}T23:59:59.999Z`;
+
+    const ventas = await Ventas.findAll({
+      where: {
+        fecha: {
+          [Op.between]: [desdeFecha, hastaFecha],
+        },
+      },
+      order: [['id_venta', 'ASC']],
+      include: [
+        {
+          model: DetalleVentas,
+          as: 'detalles',
+          include: [
+            { model: Productos, as: 'producto' /* attributes: ['nombre'] */ },
+          ],
+        },
+        {
+          model: Cambio,
+          as: 'ventacambio',
+          include: [
+            {
+              model: DetalleCambio,
+              as: 'cambiodetalles',
+              include: [
+                {
+                  model: Productos,
+                  as: 'detallecambioproducto',
+                  attributes: ['nombre'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Ahora agregamos el campo calculado
+    const ventasConTotalFinal = ventas.map((venta) => {
+      /*  const totalVentaOriginal = venta.detalles.reduce(
+        (total, item) => total + Number(item.total) * item.cantidad,
+        0
+      ); */
+
+      let totalDevuelve = 0;
+      let totalRecibe = 0;
+
+      if (venta.ventacambio) {
+        for (const detalle of venta.ventacambio.cambiodetalles) {
+          const subtotal = Number(detalle.precio_unitario) * detalle.cantidad;
+          if (detalle.tipo === 'devuelve') {
+            totalDevuelve += subtotal;
+          } else if (detalle.tipo === 'recibe') {
+            totalRecibe += subtotal;
+          }
+        }
+      }
+
+      const diferenciaCambio = totalRecibe - totalDevuelve;
+      const totalFinal = venta.total + diferenciaCambio;
+
+      return {
+        ...venta.toJSON(),
+        /*  totalVentaOriginal, */
+        totalDevuelve,
+        totalRecibe,
+        diferenciaCambio,
+        totalFinal,
+      };
+    });
+
+    res.status(200).json(ventasConTotalFinal);
+  } catch (error) {
+    console.error('Error al obtener ventas:', error);
+    res
+      .status(500)
+      .json({ error: 'Error al obtener ventas', details: error.message });
+  }
+};
+
+const ventasPorSucursal = async (req, res) => {
+  try {
+    const id_sucursal = req.params.sucursal;
+    console.log('idSucursal', id_sucursal);
+
+    const { desde, hasta } = req.body;
+
+    if (!desde || !hasta) {
+      return res.status(400).json({ error: 'Faltan fechas desde o hasta' });
+    }
+
+    const desdeFecha = `${desde}T00:00:00.000Z`;
+    const hastaFecha = `${hasta}T23:59:59.999Z`;
+
+    const ventas = await Ventas.findAll({
+      where: {
+        fecha: {
+          [Op.between]: [desdeFecha, hastaFecha],
+        },
+        id_sucursal,
+      },
+      include: [
+        {
+          model: DetalleVentas,
+          as: 'detalles',
+          include: [
+            {
+              model: Productos,
+              as: 'producto',
+              // attributes opcional
+            },
+          ],
+        },
+        {
+          model: TipoVenta,
+          as: 'tipoVenta',
+          attributes: ['tipoVenta'],
+        },
+        {
+          model: Cambio,
+          as: 'ventacambio',
+          include: [
+            {
+              model: DetalleCambio,
+              as: 'cambiodetalles',
+              include: [
+                {
+                  model: Productos,
+                  as: 'detallecambioproducto',
+                  attributes: ['nombre'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Calcular totales ajustados por cambios
+    const ventasConTotalFinal = ventas.map((venta) => {
+      let totalDevuelve = 0;
+      let totalRecibe = 0;
+
+      if (venta.ventacambio) {
+        for (const detalle of venta.ventacambio.cambiodetalles) {
+          const subtotal = Number(detalle.precio_unitario) * detalle.cantidad;
+          if (detalle.tipo === 'devuelve') {
+            totalDevuelve += subtotal;
+          } else if (detalle.tipo === 'recibe') {
+            totalRecibe += subtotal;
+          }
+        }
+      }
+
+      const diferenciaCambio = totalRecibe - totalDevuelve;
+      const totalFinal = venta.total + diferenciaCambio;
+
+      return {
+        ...venta.toJSON(),
+        totalDevuelve,
+        totalRecibe,
+        diferenciaCambio,
+        totalFinal,
+      };
+    });
+
+    res.status(200).json(ventasConTotalFinal);
   } catch (error) {
     console.error('Error al obtener ventas:', error);
     res
@@ -536,4 +723,5 @@ module.exports = {
   deleteVenta,
   registrarVenta,
   ventaDetalles,
+  ventasPorSucursal,
 };
