@@ -28,8 +28,6 @@ const User = async (req, res) => {
 const upUser = async (req, res) => {
   try {
     const { id_usuario, nombre, rol, id_sucursal } = req.body;
-    console.log('bodycito ', req.body);
-
     const user = await Usuarios.findOne({ where: { id_usuario } });
     console.log('usuario', user);
 
@@ -82,7 +80,6 @@ const addUser = async (req, res) => {
 
 const login = async (req, res) => {
   const { nombre, password } = req.body;
-  console.log('estoy back login', nombre, password);
 
   try {
     const user = await Usuarios.findOne({ where: { nombre } });
@@ -94,6 +91,10 @@ const login = async (req, res) => {
     if (!isValid)
       return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
 
+    const sucursal = await Sucursal.findOne({
+      where: { id_sucursal: user.id_sucursal },
+    });
+
     const payload = {
       id: user.id_usuario,
       nombre: user.nombre,
@@ -101,13 +102,12 @@ const login = async (req, res) => {
     };
 
     const token = jwt.sign(payload, process.env.SECRET, { expiresIn: '8h' });
-    /* res.status(200).json({ token, user: nombre, mensaje: 'Autorizado' }); */
 
-    console.log('secure', process.env.NODE_ENV === 'production');
+    /* console.log('secure', process.env.NODE_ENV === 'production');
     console.log(
       'sameSite',
       process.env.NODE_ENV === 'production' ? 'None' : 'Lax'
-    );
+    ); */
 
     res
       .cookie('Token', token, {
@@ -124,6 +124,7 @@ const login = async (req, res) => {
         id: user.id_usuario,
         mensaje: 'Autorizado',
         Sucursal: user.id_sucursal,
+        NombreSucursal: sucursal.nombre,
       });
   } catch (error) {
     console.error(error);

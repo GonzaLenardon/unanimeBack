@@ -1,8 +1,18 @@
-const { Ventas, Compras, TipoVenta } = require('../models');
+const {
+  Ventas,
+  DetalleVentas,
+  Compras,
+  TipoVenta,
+  Cambio,
+  DetalleCambio,
+} = require('../models');
 const { fn, col, where: sqWhere, Op } = require('sequelize');
 
 const resumenVentas = async (req, res) => {
   try {
+    const id_sucursal = req.params.sucursal;
+    console.log('Sucursales ', id_sucursal);
+
     const hoy = new Date();
     const tresHorasEnMs = 3 * 60 * 60 * 1000;
     const fecha = new Date(hoy.getTime() - tresHorasEnMs);
@@ -16,6 +26,8 @@ const resumenVentas = async (req, res) => {
     const resultados = await Ventas.findAll({
       attributes: [
         'id_tipo_venta',
+        'id_sucursal',
+
         [fn('SUM', col('total')), 'suma_total'],
         [fn('COUNT', col('id_venta')), 'transacciones'],
       ],
@@ -26,8 +38,16 @@ const resumenVentas = async (req, res) => {
           attributes: ['tipoVenta'],
         },
       ],
-      where: sqWhere(fn('DATE', col('fecha')), fecha),
-      group: ['id_tipo_venta', 'tipoVenta.id_tipo'],
+
+      where: {
+        [Op.and]: [
+          sqWhere(fn('DATE', col('fecha')), fecha),
+          { id_sucursal: id_sucursal },
+        ],
+      },
+
+      group: ['id_tipo_venta', 'tipoVenta.id_tipo', 'id_sucursal'],
+      order: ['id_tipo_venta'],
     });
 
     const data = resultados.map((r) => ({
@@ -44,7 +64,110 @@ const resumenVentas = async (req, res) => {
   }
 };
 
-const resumenDesdeHasta = async (req, res) => {
+const ventasPorSucursales = async (req, res) => {
+  try {
+    const { desde, hasta } = req.body;
+
+    if (!desde || !hasta) {
+      return res.status(400).json({ error: 'Faltan fechas desde o hasta' });
+    }
+
+    const desdeFecha = `${desde}T00:00:00.000Z`;
+    const hastaFecha = `${hasta}T23:59:59.999Z`;
+
+    const ventas = await Ventas.findAll({
+      where: {
+        fecha: {
+          [Op.between]: [desdeFecha, hastaFecha],
+        },
+      },
+      include: [
+        {
+          model: DetalleVentas,
+          as: 'detalles',
+        },
+        {
+          model: Cambio,
+          as: 'ventacambio',
+          include: [
+            {
+              model: DetalleCambio,
+              as: 'cambiodetalles',
+            },
+          ],
+        },
+        {
+          model: TipoVenta,
+          as: 'tipoVenta',
+          attributes: ['tipoVenta', 'id_tipo'],
+        },
+      ],
+      order: ['id_tipo_venta'],
+    });
+
+    const resumenPorSucursal = {};
+
+    console.log('Ventitas ', ventas);
+
+    for (const venta of ventas) {
+      const idSucursal = venta.id_sucursal;
+      const tipoVentaNombre =
+        venta.tipoVenta?.tipoVenta?.replace(/\s/g, '_') || 'otro';
+
+      const totalVenta = venta.detalles.reduce(
+        (acc, det) => acc + Number(det.total),
+        0
+      );
+
+      let totalDevuelve = 0;
+      let totalRecibe = 0;
+
+      if (venta.ventacambio) {
+        for (const det of venta.ventacambio.cambiodetalles) {
+          const subtotal = Number(det.precio_unitario) * det.cantidad;
+          if (det.tipo === 'devuelve') totalDevuelve += subtotal;
+          else if (det.tipo === 'recibe') totalRecibe += subtotal;
+        }
+      }
+
+      const diferenciaCambio = totalRecibe - totalDevuelve;
+      const totalFinal = totalVenta + diferenciaCambio;
+
+      // Inicializar sucursal si no existe
+      if (!resumenPorSucursal[idSucursal]) {
+        resumenPorSucursal[idSucursal] = {};
+      }
+
+      // Inicializar tipo de venta si no existe
+      if (!resumenPorSucursal[idSucursal][tipoVentaNombre]) {
+        resumenPorSucursal[idSucursal][tipoVentaNombre] = {
+          id_tipo_venta: venta.tipoVenta.id_tipo,
+          tipo_venta: tipoVentaNombre,
+          total: 0,
+          transacciones: 0,
+        };
+      }
+
+      // Acumular total y contador
+      resumenPorSucursal[idSucursal][tipoVentaNombre].total += totalFinal;
+      resumenPorSucursal[idSucursal][tipoVentaNombre].transacciones += 1;
+    }
+
+    const resultadoFinal = Object.entries(resumenPorSucursal).map(
+      ([id_sucursal, ventasPorTipo]) => ({
+        id_sucursal: Number(id_sucursal),
+        ventas: ventasPorTipo,
+      })
+    );
+
+    return res.status(200).json(resultadoFinal);
+  } catch (error) {
+    console.error('Error en resumenVentas:', error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+/* const resumenDesdeHasta = async (req, res) => {
   console.log('llego ...');
   try {
     const { desde, hasta } = req.body;
@@ -85,6 +208,106 @@ const resumenDesdeHasta = async (req, res) => {
     console.error('Error en resumenVentas:', error);
     return res.status(500).json({ error: error.message });
   }
+}; */
+
+const resumenVentasDesdeHasta = async (req, res) => {
+  try {
+    const { desde, hasta } = req.body;
+
+    if (!desde || !hasta) {
+      return res.status(400).json({ error: 'Faltan fechas desde o hasta' });
+    }
+
+    const desdeFecha = `${desde}T00:00:00.000Z`;
+    const hastaFecha = `${hasta}T23:59:59.999Z`;
+
+    const ventas = await Ventas.findAll({
+      where: {
+        fecha: {
+          [Op.between]: [desdeFecha, hastaFecha],
+        },
+      },
+      include: [
+        {
+          model: DetalleVentas,
+          as: 'detalles',
+        },
+        {
+          model: Cambio,
+          as: 'ventacambio',
+          include: [
+            {
+              model: DetalleCambio,
+              as: 'cambiodetalles',
+            },
+          ],
+        },
+        {
+          model: TipoVenta,
+          as: 'tipoVenta',
+          attributes: ['tipoVenta', 'id_tipo'],
+        },
+      ],
+    });
+
+    const resumenMap = new Map();
+
+    for (const venta of ventas) {
+      const idTipoVenta = venta.id_tipo_venta;
+      const tipoVentaNombre = venta.tipoVenta?.tipoVenta || 'Sin nombre';
+
+      const totalVenta = venta.detalles.reduce(
+        (acc, det) => acc + Number(det.total) * det.cantidad,
+        0
+      );
+
+      let totalDevuelve = 0;
+      let totalRecibe = 0;
+
+      if (venta.ventacambio) {
+        for (const det of venta.ventacambio.cambiodetalles) {
+          const subtotal = Number(det.precio_unitario) * det.cantidad;
+          if (det.tipo === 'devuelve') {
+            totalDevuelve += subtotal;
+          } else if (det.tipo === 'recibe') {
+            totalRecibe += subtotal;
+          }
+        }
+      }
+
+      const diferenciaCambio = totalRecibe - totalDevuelve;
+      const totalFinal = totalVenta + diferenciaCambio;
+
+      if (!resumenMap.has(idTipoVenta)) {
+        resumenMap.set(idTipoVenta, {
+          id_tipo_venta: idTipoVenta,
+          tipo_venta: tipoVentaNombre,
+          transacciones: 0,
+          suma_total: 0,
+        });
+      }
+
+      const resumen = resumenMap.get(idTipoVenta);
+      resumen.transacciones += 1;
+      resumen.suma_total += totalFinal;
+    }
+
+    const data = Array.from(resumenMap.values()).map((resumen) => ({
+      id_tipo_venta: resumen.id_tipo_venta,
+      tipo_venta: resumen.tipo_venta,
+      transacciones: resumen.transacciones,
+      suma_total: parseFloat(resumen.suma_total.toFixed(2)),
+    }));
+
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error('Error en resumenVentas:', error);
+    return res.status(500).json({ error: error.message });
+  }
 };
 
-module.exports = { resumenVentas, resumenDesdeHasta };
+module.exports = {
+  resumenVentas,
+  resumenVentasDesdeHasta,
+  ventasPorSucursales,
+};

@@ -126,7 +126,8 @@ const addCompra = async (req, res) => {
       cantidad: detalle.cantidad,
       costo: detalle.costo,
       nombreProducto: detalle.nombreProducto,
-      vencimiento: detalle.vencimiento,
+      /*   vencimiento: detalle.vencimiento, */
+      vencimiento: fecha,
       compra_id: nuevaCompra.id_compra,
     }));
 

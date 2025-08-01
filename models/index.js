@@ -12,6 +12,8 @@ const TransferenciaDetalle = require('../models/detalleTransferencia');
 const Gastos = require('../models/gastos');
 const TipoGastos = require('../models/tipoGastos');
 const StockSucursal = require('./stocksucursal');
+const Cambio = require('./cambio');
+const DetalleCambio = require('./detallecambio');
 
 // Relación: Una venta tiene muchos detalles de venta
 
@@ -25,6 +27,7 @@ TipoVenta.hasMany(Ventas, { foreignKey: 'id_tipo_venta', as: 'ventas' });
 Ventas.belongsTo(TipoVenta, { foreignKey: 'id_tipo_venta', as: 'tipoVenta' });
 
 Ventas.hasMany(DetalleVentas, { foreignKey: 'id_venta', as: 'detalles' });
+
 DetalleVentas.belongsTo(Ventas, { foreignKey: 'id_venta', as: 'venta' });
 
 Productos.hasMany(DetalleVentas, { foreignKey: 'id_producto', as: 'ventas' });
@@ -32,9 +35,6 @@ DetalleVentas.belongsTo(Productos, {
   foreignKey: 'id_producto',
   as: 'producto',
 });
-
-/* DetalleCompra.hasMany(DetalleVentas, { foreignKey: 'id_detalle_compra', as: 'ventas'});
-DetalleVentas.belongsTo(DetalleCompra, { foreignKey: 'id_detalle_compra', as: 'detalleCompra'}); */
 
 DetalleCompra.hasMany(DetalleVentas, {
   foreignKey: 'id_detalle_compra',
@@ -133,6 +133,40 @@ Sucursal.hasMany(Gastos, {
   as: 'gastos',
 });
 
+DetalleCambio.belongsTo(Cambio, {
+  foreignKey: 'id_cambio',
+  as: 'cambio',
+});
+
+/* ********************************************************************   */
+
+Ventas.hasOne(Cambio, {
+  foreignKey: 'id_venta_original',
+  as: 'ventacambio', // 👈 Este alias debe coincidir con tu include
+});
+
+// Cambio pertenece a una venta original
+Cambio.belongsTo(Ventas, {
+  foreignKey: 'id_venta_original',
+  as: 'ventaOriginal',
+});
+
+// Cambio tiene muchos DetalleCambio
+Cambio.hasMany(DetalleCambio, {
+  foreignKey: 'id_cambio',
+  as: 'cambiodetalles',
+});
+
+DetalleCambio.belongsTo(Productos, {
+  foreignKey: 'producto_id',
+  as: 'detallecambioproducto',
+});
+
+Productos.hasMany(DetalleCambio, {
+  foreignKey: 'producto_id',
+  as: 'productoendetallecambio',
+});
+
 module.exports = {
   Usuarios,
   Ventas,
@@ -148,4 +182,6 @@ module.exports = {
   Gastos,
   TipoGastos,
   StockSucursal,
+  Cambio,
+  DetalleCambio,
 };

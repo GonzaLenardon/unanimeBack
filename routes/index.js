@@ -25,6 +25,7 @@ const {
   deleteVenta,
   registrarVenta,
   ventaDetalles,
+  ventasPorSucursal,
 } = require('../controllers/ventas');
 const {
   addcompras,
@@ -64,6 +65,8 @@ const {
   resumenVentas,
   ventasDesdeHasta,
   resumenDesdeHasta,
+  resumenVentasDesdeHasta,
+  ventasPorSucursales,
 } = require('../controllers/listados');
 const { verStock, transferirStock } = require('../controllers/stock');
 const {
@@ -79,6 +82,8 @@ const {
   resumenGastos,
 } = require('../controllers/gastos');
 
+const { registrarCambioProducto } = require('../controllers/cambios');
+
 router.get('/user', allUsers);
 router.get('/user/me', authMiddleware, getUser);
 router.post('/user', addUser);
@@ -90,14 +95,18 @@ router.post('/user/reset', resetPassword);
 router.get('/ventas', allVentas);
 router.post('/ventas', registrarVenta);
 router.post('/ventas/desdehasta', desdeHasta);
+
+router.post('/ventas/sucursal/:sucursal', ventasPorSucursal);
+
 router.delete('/ventas/:id', deleteVenta);
 
 router.get('/ventas/:id_producto', ventasProducto);
 router.get('/ventas/detalles/:id_venta', ventaDetalles);
 
-router.post('/listados', resumenVentas);
-router.get('/listados', verStock);
-router.post('/listados/desdehasta', resumenDesdeHasta);
+router.post('/listados/:sucursal', resumenVentas);
+router.get('/listados/stock/sucursal/:sucursal', verStock);
+router.post('/listados/ventas/resumen', resumenVentasDesdeHasta);
+router.post('/listados/ventas/sucursales', ventasPorSucursales);
 
 router.get('/productos', productosStock);
 /* router.get('/productos/:id_producto', comprasProducto); */
@@ -135,6 +144,8 @@ router.post('/stock/transferir', transferirStock);
 
 router.post('/sucursal', addSucursal);
 router.get('/sucursal', allSucursal);
-router.get('/sucursal/:id_usuario', getSucursal);
+router.get('/sucursal/usuario/:id_usuario', getSucursal);
+
+router.post('/cambio', registrarCambioProducto);
 
 module.exports = router;
