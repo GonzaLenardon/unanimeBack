@@ -29,14 +29,18 @@ Ventas.init(
       allowNull: false,
     },
 
-    /* usuario_id: {
+    id_usuario: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'usuarios',
-        key: 'id_usuario',
-      },
-    }, */
+      allowNull: false,
+    },
+    id_sucursal: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    id_tipo_venta: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
   },
 
   {

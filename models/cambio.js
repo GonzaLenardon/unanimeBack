@@ -10,14 +10,21 @@ Cambios.init(
       primaryKey: true,
       autoIncrement: true,
     },
-    fecha: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
     id_venta_original: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
+    id_venta_diferencia: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
+    fecha: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+
     observaciones: {
       type: DataTypes.STRING,
     },

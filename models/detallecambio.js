@@ -14,10 +14,6 @@ Detallecambio.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    tipo: {
-      type: DataTypes.ENUM('devuelve', 'recibe'),
-      allowNull: false,
-    },
     producto_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -26,6 +22,12 @@ Detallecambio.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
+    tipo: {
+      type: DataTypes.ENUM('devuelve', 'recibe'),
+      allowNull: false,
+    },
+
     precio_unitario: {
       type: DataTypes.DECIMAL,
       allowNull: false,

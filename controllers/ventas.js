@@ -698,7 +698,7 @@ const ventaDetalles = async (req, res) => {
             {
               model: Productos,
               as: 'producto', // 👈 debe coincidir con el alias definido en la relación
-              attributes: ['nombre'], // Traemos solo el nombre
+              attributes: ['nombre', 'precio_venta'], // Traemos solo el nombre
             },
           ],
         },

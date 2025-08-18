@@ -29,7 +29,7 @@ const upUser = async (req, res) => {
   try {
     const { id_usuario, nombre, rol, id_sucursal } = req.body;
     const user = await Usuarios.findOne({ where: { id_usuario } });
-    console.log('usuario', user);
+    /*   console.log('usuario', user); */
 
     if (!user) {
       return res.status(400).json({ message: '¡Usuario NO está registrado!' });
