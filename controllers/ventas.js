@@ -8,6 +8,7 @@ const {
   Cambio,
   DetalleCambio,
   TipoVenta,
+  Sucursal,
 } = require('../models');
 const db = require('../db/conection');
 const { fn, col, where, Op } = require('sequelize');
@@ -129,6 +130,12 @@ const desdeHasta = async (req, res) => {
             },
           ],
         },
+        { model: Sucursal, as: 'sucursal', attributes: ['nombre'] },
+        {
+          model: TipoVenta,
+          as: 'tipoVenta',
+          attributes: ['tipoVenta'],
+        },
       ],
     });
 
@@ -208,6 +215,7 @@ const ventasPorSucursal = async (req, res) => {
             },
           ],
         },
+        { model: Sucursal, as: 'sucursal', attributes: ['nombre'] },
         {
           model: TipoVenta,
           as: 'tipoVenta',
@@ -231,6 +239,7 @@ const ventasPorSucursal = async (req, res) => {
           ],
         },
       ],
+      order: ['id_venta'],
     });
 
     // Calcular totales ajustados por cambios

@@ -11,6 +11,9 @@ const { fn, col, where: sqWhere, Op } = require('sequelize');
 const resumenVentas = async (req, res) => {
   try {
     const id_sucursal = req.params.sucursal;
+
+    const { desde, hasta } = req.body;
+
     console.log('Sucursales ', id_sucursal);
 
     const hoy = new Date();
@@ -41,7 +44,7 @@ const resumenVentas = async (req, res) => {
 
       where: {
         [Op.and]: [
-          sqWhere(fn('DATE', col('fecha')), fecha),
+          sqWhere(fn('DATE', col('fecha')), desde),
           { id_sucursal: id_sucursal },
         ],
       },

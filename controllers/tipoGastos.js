@@ -16,6 +16,8 @@ const addTipoGastos = async (req, res) => {
     const { tipoGasto } = req.body;
 
     console.log('body', req.body);
+    tipoGasto =
+      tipoGasto.charAt(0).toUpperCase() + tipoGasto.slice(1).toLowerCase();
 
     const tipoV = await TipoGastos.findOne({ where: { tipoGasto } });
 
@@ -41,9 +43,11 @@ const addTipoGastos = async (req, res) => {
 };
 
 const updateTipoGasto = async (req, res) => {
-  console.log('proveedores ', req.body);
   const { id_tipogasto, tipoGasto } = req.body;
 
+  /*   tipoGasto =
+    tipoGasto.charAt(0).toUpperCase() + tipoGasto.slice(1).toLowerCase();
+ */
   try {
     const tipoExistente = await TipoGastos.findByPk(id_tipogasto);
 
