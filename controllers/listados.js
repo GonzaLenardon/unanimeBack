@@ -14,6 +14,9 @@ const resumenVentas = async (req, res) => {
 
     const { desde, hasta } = req.body;
 
+    const desdeFecha = `${desde}T00:00:00.000Z`;
+    const hastaFecha = `${hasta}T23:59:59.999Z`;
+
     console.log('Sucursales ', id_sucursal);
 
     const hoy = new Date();
@@ -44,7 +47,7 @@ const resumenVentas = async (req, res) => {
 
       where: {
         [Op.and]: [
-          sqWhere(fn('DATE', col('fecha')), desde),
+          { fecha: { [Op.between]: [desdeFecha, hastaFecha] } },
           { id_sucursal: id_sucursal },
         ],
       },
