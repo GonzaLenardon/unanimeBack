@@ -57,7 +57,7 @@ Productos.init(
       allowNull: true,
     },
   },
-  { sequelize: db, modelName: 'productos' }
+  { sequelize: db, modelName: 'productos', timestamps: false }
 );
 
 module.exports = Productos;
