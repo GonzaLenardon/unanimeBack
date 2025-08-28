@@ -31,6 +31,10 @@ const addProductos = async (req, res) => {
     precio_venta = parseFloat(precio_venta).toFixed(2);
     /*  capacidad = parseFloat(capacidad).toFixed(2); */
 
+    const hoy = new Date();
+    const tresHorasEnMs = 3 * 60 * 60 * 1000;
+    const fecha = new Date(hoy.getTime() - tresHorasEnMs);
+
     const newProd = await Productos.create({
       codigo,
       nombre,
@@ -42,6 +46,8 @@ const addProductos = async (req, res) => {
       porcentaje,
       precio_venta,
       observaciones,
+      createdAt: fecha,
+      updatedAt: fecha,
     });
 
     console.log('uno');
@@ -197,6 +203,10 @@ const updateProductos = async (req, res) => {
       return res.status(404).json({ message: 'Registro no encontrado' });
     }
 
+    const hoy = new Date();
+    const tresHorasEnMs = 3 * 60 * 60 * 1000;
+    const fecha = new Date(hoy.getTime() - tresHorasEnMs);
+
     await Productos.update(
       {
         codigo: codGenerado,
@@ -209,6 +219,7 @@ const updateProductos = async (req, res) => {
         porcentaje,
         precio_venta,
         observaciones,
+        updatedAt: fecha,
       },
       { where: { id_producto } }
     );
