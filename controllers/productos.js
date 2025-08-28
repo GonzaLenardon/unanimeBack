@@ -35,6 +35,8 @@ const addProductos = async (req, res) => {
     const tresHorasEnMs = 3 * 60 * 60 * 1000;
     const fecha = new Date(hoy.getTime() - tresHorasEnMs);
 
+    console.log('Esta es la hora local ', fecha);
+
     const newProd = await Productos.create({
       codigo,
       nombre,
@@ -206,6 +208,8 @@ const updateProductos = async (req, res) => {
     const hoy = new Date();
     const tresHorasEnMs = 3 * 60 * 60 * 1000;
     const fecha = new Date(hoy.getTime() - tresHorasEnMs);
+
+    console.log('Esta es la hora local ', fecha);
 
     await Productos.update(
       {
