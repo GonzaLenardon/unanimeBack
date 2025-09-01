@@ -216,7 +216,7 @@ const ventasPorSucursales = async (req, res) => {
   }
 }; */
 
-const resumenVentasDesdeHasta = async (req, res) => {
+/* const resumenVentasDesdeHasta = async (req, res) => {
   try {
     const { desde, hasta } = req.body;
 
@@ -266,6 +266,92 @@ const resumenVentasDesdeHasta = async (req, res) => {
         (acc, det) => acc + Number(det.total) * det.cantidad,
         0
       );
+
+      let totalDevuelve = 0;
+      let totalRecibe = 0;
+
+      if (venta.ventacambio) {
+        for (const det of venta.ventacambio.cambiodetalles) {
+          const subtotal = Number(det.precio_unitario) * det.cantidad;
+          if (det.tipo === 'devuelve') {
+            totalDevuelve += subtotal;
+          } else if (det.tipo === 'recibe') {
+            totalRecibe += subtotal;
+          }
+        }
+      }
+
+      const diferenciaCambio = totalRecibe - totalDevuelve;
+      const totalFinal = totalVenta + diferenciaCambio;
+
+      if (!resumenMap.has(idTipoVenta)) {
+        resumenMap.set(idTipoVenta, {
+          id_tipo_venta: idTipoVenta,
+          tipo_venta: tipoVentaNombre,
+          transacciones: 0,
+          suma_total: 0,
+        });
+      }
+
+      const resumen = resumenMap.get(idTipoVenta);
+      resumen.transacciones += 1;
+      resumen.suma_total += totalFinal;
+    }
+
+    const data = Array.from(resumenMap.values()).map((resumen) => ({
+      id_tipo_venta: resumen.id_tipo_venta,
+      tipo_venta: resumen.tipo_venta,
+      transacciones: resumen.transacciones,
+      suma_total: parseFloat(resumen.suma_total.toFixed(2)),
+    }));
+
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error('Error en resumenVentas:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}; */
+
+const resumenVentasDesdeHasta = async (req, res) => {
+  try {
+    const { desde, hasta } = req.body;
+
+    if (!desde || !hasta) {
+      return res.status(400).json({ error: 'Faltan fechas desde o hasta' });
+    }
+
+    const desdeFecha = `${desde}T00:00:00.000Z`;
+    const hastaFecha = `${hasta}T23:59:59.999Z`;
+
+    const ventas = await Ventas.findAll({
+      where: {
+        fecha: {
+          [Op.between]: [desdeFecha, hastaFecha],
+        },
+      },
+      include: [
+        { model: DetalleVentas, as: 'detalles' },
+        {
+          model: Cambio,
+          as: 'ventacambio',
+          include: [{ model: DetalleCambio, as: 'cambiodetalles' }],
+        },
+        {
+          model: TipoVenta,
+          as: 'tipoVenta',
+          attributes: ['tipoVenta', 'id_tipo'],
+        },
+      ],
+    });
+
+    const resumenMap = new Map();
+
+    for (const venta of ventas) {
+      const idTipoVenta = venta.id_tipo_venta;
+      const tipoVentaNombre = venta.tipoVenta?.tipoVenta || 'Sin nombre';
+
+      // ✅ usamos el total de la tabla Ventas, no recalculamos desde detalles
+      const totalVenta = Number(venta.total);
 
       let totalDevuelve = 0;
       let totalRecibe = 0;
