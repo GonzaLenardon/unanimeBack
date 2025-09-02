@@ -57,11 +57,11 @@ Productos.init(
       allowNull: true,
     },
     createdAt: {
-      type: DataTypes.DATE,
+      type: S.DATE,
       allowNull: false,
     },
     updatedAt: {
-      type: DataTypes.DATE,
+      type: S.DATE,
       allowNull: false,
     },
   },
