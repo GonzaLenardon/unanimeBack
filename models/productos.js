@@ -56,6 +56,14 @@ Productos.init(
       type: S.STRING,
       allowNull: true,
     },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
   },
   { sequelize: db, modelName: 'productos', timestamps: false }
 );
