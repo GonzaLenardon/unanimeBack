@@ -53,7 +53,7 @@ const getSucursal = async (req, res) => {
   console.log('adadfadsf', req.params);
   try {
     const usuario = await Usuarios.findOne({ where: { id_usuario } });
-    /*   console.log('Usuario', usuario); */
+    console.log('Usuario', usuario);
     res.status(200).json({ sucursal: usuario.id_sucursal });
   } catch (error) {
     console.error('Error al agregar sucursal:', error);
