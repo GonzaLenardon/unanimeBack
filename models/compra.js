@@ -22,6 +22,10 @@ Compra.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    id_usuario: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
   },
   { sequelize: db, modelName: 'compra' }
 );

@@ -13,32 +13,35 @@ const allTipoGastos = async (req, res) => {
 
 const addTipoGastos = async (req, res) => {
   try {
-    const { tipoGasto } = req.body;
+    let { tipoGasto } = req.body;
 
     console.log('body', req.body);
-    tipoGasto =
+
+    // Normalizamos el texto
+    const tipoGastoNormalizado =
       tipoGasto.charAt(0).toUpperCase() + tipoGasto.slice(1).toLowerCase();
 
-    const tipoV = await TipoGastos.findOne({ where: { tipoGasto } });
+    // Verificar si existe
+    const tipoV = await TipoGastos.findOne({
+      where: { tipoGasto: tipoGastoNormalizado },
+    });
 
     if (tipoV) {
       return res.status(400).json({ message: '¡Tipo de Gasto ya existente!' });
     }
 
-    const newTipoVenta = await TipoGastos.create({
-      tipoGasto,
+    // Crear registro
+    const newTipoGasto = await TipoGastos.create({
+      tipoGasto: tipoGastoNormalizado,
     });
 
     res.status(201).json({
-      message: 'Tipo Gasto creada exitosamente',
-      newTipoVenta,
+      message: 'Tipo de Gasto creado exitosamente',
+      newTipoGasto,
     });
   } catch (error) {
     console.error('Error al agregar Gasto :', error);
-    res.status(500).json({
-      error: 'Error en el servidor',
-      details: error.message,
-    });
+    res.status(500).json({ error: 'Error al agregar Gasto' });
   }
 };
 

@@ -457,15 +457,12 @@ const ventasPorSucursal = async (req, res) => {
 const registrarVenta = async (req, res) => {
   const t = await db.transaction();
   try {
-    const {
-      id_usuario,
-      id_sucursal,
-      id_tipo_venta,
-      porcentaje_aplicado,
-      detalles,
-    } = req.body;
+    const { id_tipo_venta, porcentaje_aplicado, detalles } = req.body;
 
     console.log('mmmm ', req.body);
+
+    const id_usuario = req.user.id;
+    const id_sucursal = req.user.sucursal_id;
 
     const hoy = new Date();
     const tresHorasEnMs = 3 * 60 * 60 * 1000;

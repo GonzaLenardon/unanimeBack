@@ -83,13 +83,14 @@ const login = async (req, res) => {
 
   try {
     const user = await Usuarios.findOne({ where: { nombre } });
-    if (!user)
+    if (!user) {
       return res.status(401).json({ mensaje: 'Usuario no encontrado' });
+    }
 
     const isValid = await user.validatePass(password);
-
-    if (!isValid)
+    if (!isValid) {
       return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+    }
 
     const sucursal = await Sucursal.findOne({
       where: { id_sucursal: user.id_sucursal },
@@ -99,35 +100,37 @@ const login = async (req, res) => {
       id: user.id_usuario,
       nombre: user.nombre,
       rol: user.rol,
+      admin: user.rol === 'admin', // 👈 Agregar campo admin
+      sucursal_id: user.id_sucursal,
     };
 
-    const token = jwt.sign(payload, process.env.SECRET, { expiresIn: '8h' });
+    const token = jwt.sign(payload, process.env.SECRET, { expiresIn: '4h' });
 
-    /* console.log('secure', process.env.NODE_ENV === 'production');
-    console.log(
-      'sameSite',
-      process.env.NODE_ENV === 'production' ? 'None' : 'Lax'
-    ); */
+    // ✅ CORRECCIÓN: Configuración correcta según el entorno
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // false en desarrollo
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Lax en desarrollo
+      maxAge: 8 * 60 * 60 * 1000, // 8 horas (igual que el token)
+    };
+
+    console.log('🍪 Cookie options:', cookieOptions);
 
     res
-      .cookie('Token', token, {
-        httpOnly: true,
-        /* secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', */
-        secure: true,
-        sameSite: 'None',
-        maxAge: 4 * 60 * 60 * 1000,
-      })
+      .cookie('Token', token, cookieOptions)
       .status(200)
       .json({
         user: nombre,
         id: user.id_usuario,
+        admin: user.rol === 'admin',
         mensaje: 'Autorizado',
         Sucursal: user.id_sucursal,
         NombreSucursal: sucursal.nombre,
+        // ⚠️ NO envíes el token en el body si usas cookies
+        // token: token,
       });
   } catch (error) {
-    console.error(error);
+    console.error('❌ Error en login:', error);
     res.status(500).json({ error: 'Error en el servidor' });
   }
 };
@@ -159,30 +162,26 @@ const resetPassword = async (req, res) => {
 };
 
 const getUser = (req, res) => {
-  const token = req.cookies.Token;
-  console.log('GETUSER ... ', token);
+  // req.user ya viene del middleware authMiddleware
+  console.log('✅ Usuario autenticado:', req.user);
 
-  if (!token) return res.status(401).json({ mensaje: 'Sesión expirada' });
-
-  try {
-    const decoded = jwt.verify(token, process.env.SECRET);
-    res.status(200).json(decoded);
-  } catch (error) {
-    return res.status(401).json({ mensaje: 'Token inválido o expirado' });
-  }
+  res.status(200).json({
+    id: req.user.id,
+    nombre: req.user.nombre,
+    rol: req.user.rol,
+    admin: req.user.admin || req.user.rol === 'admin',
+  });
 };
 
 const logout = (req, res) => {
   res.clearCookie('Token', {
     httpOnly: true,
-    secure: true,
-    sameSite: 'None',
-    path: '/', // Asegurate de usar el mismo path que usaste al setearla
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
   });
 
-  res.status(200).json({ message: 'Sesión cerrada correctamente' });
+  res.status(200).json({ mensaje: 'Sesión cerrada' });
 };
-
 module.exports = {
   allUsers,
   User,

@@ -29,11 +29,9 @@ const allGastos = async (req, res) => {
 
 const addGastos = async (req, res) => {
   try {
-    const { fecha, monto, observaciones, id_tipogasto, id_sucursal } = req.body;
-    console.log(
-      'SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS',
-      req.body
-    );
+    const { fecha, monto, observaciones, id_tipogasto } = req.body;
+
+    const id_sucursal = req.user.sucursal_id;
 
     console.log('body', req.body);
 
@@ -42,7 +40,7 @@ const addGastos = async (req, res) => {
       monto,
       observaciones,
       id_tipogasto: parseInt(id_tipogasto),
-      id_sucursal: parseInt(id_sucursal),
+      id_sucursal,
     });
     res.status(201).json({
       message: 'Gasto creado exitosamente',
@@ -58,12 +56,9 @@ const addGastos = async (req, res) => {
 };
 
 const updateGastos = async (req, res) => {
-  console.log(
-    'proveedoressssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss ',
-    req.body
-  );
-  const { id_gasto, fecha, monto, observaciones, id_tipogasto, id_sucursal } =
-    req.body;
+  const { id_gasto, fecha, monto, observaciones, id_tipogasto } = req.body;
+
+  const id_sucursal = req.user.sucursal_id;
 
   try {
     const gastoExistente = await Gastos.findByPk(id_gasto);
@@ -78,7 +73,7 @@ const updateGastos = async (req, res) => {
         monto,
         observaciones,
         id_tipogasto,
-        id_sucursal: parseInt(id_sucursal),
+        id_sucursal,
       },
       { where: { id_gasto } }
     );
