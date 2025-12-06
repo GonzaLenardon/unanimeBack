@@ -31,7 +31,7 @@ app.use('/', router);
 
 const startServer = async () => {
   try {
-    await sequelize.sync({ force: true }); // ⚠️ Sincroniza la base de datos (sin borrar datos)
+    await sequelize.sync({ alter: true }); // ⚠️ Sincroniza la base de datos (sin borrar datos)
     console.log('📦 Base de datos sincronizada.');
 
     app.listen(PORT, () => {
