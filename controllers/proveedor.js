@@ -2,8 +2,8 @@ const { Proveedores } = require('../models');
 
 const addProveedor = async (req, res) => {
   try {
+    const id_sucursal = req.user.sucursal_id;
     const { nombre, direccion, telefono, email, contacto } = req.body;
-    console.log('body', req.body);
 
     const proveedor = await Proveedores.findOne({ where: { nombre } });
 
@@ -17,6 +17,7 @@ const addProveedor = async (req, res) => {
       telefono,
       email,
       contacto,
+      id_sucursal,
     });
     res
       .status(201)
@@ -31,7 +32,9 @@ const addProveedor = async (req, res) => {
 
 const allProveedores = async (req, res) => {
   try {
-    const allProv = await Proveedores.findAll();
+    const id_sucursal = req.user.sucursal_id;
+
+    const allProv = await Proveedores.findAll({ where: { id_sucursal } });
     res.status(200).json(allProv);
   } catch (error) {
     res
@@ -41,11 +44,10 @@ const allProveedores = async (req, res) => {
 };
 
 const updateProveedor = async (req, res) => {
-  console.log('proveedores ', req.body);
-  const { id_proveedor, nombre, direccion, telefono, email, contacto } =
-    req.body;
-
   try {
+    const { id_proveedor, nombre, direccion, telefono, email, contacto } =
+      req.body;
+
     const productoExistente = await Proveedores.findByPk(id_proveedor);
 
     if (!productoExistente) {

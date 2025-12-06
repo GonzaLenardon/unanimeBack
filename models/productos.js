@@ -64,6 +64,10 @@ Productos.init(
       type: S.DATE,
       allowNull: false,
     },
+    id_sucursal: {
+      type: S.INTEGER,
+      allowNull: false,
+    },
   },
   { sequelize: db, modelName: 'productos', timestamps: false }
 );

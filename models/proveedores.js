@@ -29,7 +29,14 @@ Proveedores.init(
       allowNull: true,
     },
     email: { type: S.STRING, allowNull: true },
+
+    id_sucursal: {
+      type: S.INTEGER,
+      defaultValue: 1,
+      allowNull: false,
+    },
   },
+
   {
     sequelize: db,
     modelName: 'proveedores',

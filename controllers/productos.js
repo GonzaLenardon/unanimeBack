@@ -5,6 +5,7 @@ const {
   Ventas,
   Proveedores,
   DetalleVentas,
+  StockSucursal,
 } = require('../models');
 const sequelize = require('../db/conection.js');
 
@@ -24,6 +25,8 @@ const addProductos = async (req, res) => {
       precio_venta,
       observaciones,
     } = req.body;
+
+    const id_sucursal = req.user.sucursal_id;
 
     // Asegurarse de que los valores tengan 2 decimales
     costo = parseFloat(costo).toFixed(2);
@@ -50,6 +53,7 @@ const addProductos = async (req, res) => {
       observaciones,
       createdAt: fecha,
       updatedAt: fecha,
+      id_sucursal,
     });
 
     console.log('uno');
@@ -80,38 +84,143 @@ const addProductos = async (req, res) => {
   }
 };
 
-/* const allProductos = async (req, res) => {
+const allProductos = async (req, res) => {
+  const id_sucursal = req.user.sucursal_id;
+
   try {
-    const productosConStock = await Productos.findAll({
-      attributes: {
-        include: [
-          [
-            Sequelize.fn('SUM', Sequelize.col('compras.stock_disponible')),
-            'stock_total',
-          ],
+    const productos = await Productos.findAll({
+      where: { id_sucursal }, // ✅ AHORA sí se aplica correctamente
+
+      attributes: [
+        'id_producto',
+        'codigo',
+        'nombre',
+        'marca',
+        'modelo',
+        'talle',
+        'color',
+        'costo',
+        'porcentaje',
+        'precio_venta',
+        'observaciones',
+        [
+          sequelize.fn(
+            'COALESCE',
+            sequelize.fn(
+              'SUM',
+              sequelize.col('compras.detalleCompraToSucursal.stock')
+            ),
+            0
+          ),
+          'stock_total',
         ],
-      },
+      ],
+
       include: [
         {
           model: DetalleCompra,
           as: 'compras',
           attributes: [],
+          include: [
+            {
+              model: StockSucursal,
+              as: 'detalleCompraToSucursal',
+              attributes: [],
+              required: false,
+            },
+          ],
         },
       ],
+
       group: ['productos.id_producto'],
       order: [['nombre', 'ASC']],
     });
 
-    // Mover este console.log aquí si querés ver los datos
-
-    res.status(200).send(productosConStock);
+    res.json(productos);
   } catch (error) {
     console.error('Error al obtener productos:', error);
     res.status(500).json({ error: 'Error al obtener productos' });
   }
-}; */
+};
+
+const { Op } = require('sequelize');
 
 const productosStock = async (req, res) => {
+  const id_sucursal = req.user.sucursal_id;
+
+  try {
+    const productos = await Productos.findAll({
+      where: { id_sucursal },
+
+      attributes: [
+        'id_producto',
+        'codigo',
+        'nombre',
+        'marca',
+        'modelo',
+        'talle',
+        'color',
+        'costo',
+        'porcentaje',
+        'precio_venta',
+        'observaciones',
+        [
+          sequelize.fn(
+            'COALESCE',
+            sequelize.fn(
+              'SUM',
+              sequelize.col('compras.detalleCompraToSucursal.stock')
+            ),
+            0
+          ),
+          'stock_total',
+        ],
+      ],
+
+      include: [
+        {
+          model: DetalleCompra,
+          as: 'compras',
+          attributes: [],
+          include: [
+            {
+              model: StockSucursal,
+              as: 'detalleCompraToSucursal',
+              attributes: [],
+              required: false,
+            },
+          ],
+        },
+      ],
+
+      group: ['productos.id_producto'],
+
+      // ✅ ALTERNATIVA SEGURA: Usar sequelize.where con la función completa
+      having: sequelize.where(
+        sequelize.fn(
+          'COALESCE',
+          sequelize.fn(
+            'SUM',
+            sequelize.col('compras.detalleCompraToSucursal.stock')
+          ),
+          0
+        ),
+        { [Op.gt]: 0 }
+      ),
+
+      order: [['nombre', 'ASC']],
+    });
+
+    res.json(productos);
+  } catch (error) {
+    console.error('Error al obtener productos:', error);
+    res.status(500).json({ error: 'Error al obtener productos' });
+  }
+};
+
+module.exports = { productosStock };
+
+/* const productosStock = async (req, res) => {
   try {
     const [result] = await sequelize.query(`
   SELECT 
@@ -179,7 +288,7 @@ ORDER BY p.nombre;
     console.error('Error al obtener productos con stock:', error);
     res.status(500).json({ error: 'Error al obtener los datos' });
   }
-};
+}; */
 
 const updateProductos = async (req, res) => {
   const {
@@ -329,7 +438,7 @@ const ventasProducto = async (req, res) => {
 };
 module.exports = {
   addProductos,
-  /*  allProductos, */
+  allProductos,
   updateProductos,
   comprasProducto,
   ventasProducto,

@@ -43,6 +43,7 @@ const {
   productosStock,
   ventasProducto,
   actualizarCodigosBarras,
+  allProductos,
 } = require('../controllers/productos');
 const {
   addProveedor,
@@ -85,11 +86,15 @@ const {
 
 const { registrarCambioProducto } = require('../controllers/cambios');
 
+router.post('/user/login', login);
+
+router.use(authMiddleware); // 👈 A partir de aquí, todas requieren token
+
 router.get('/user', allUsers);
 router.get('/user/me', authMiddleware, getUser);
 router.post('/user', addUser);
 router.put('/user', upUser);
-router.post('/user/login', login);
+
 router.post('/user/logout', logout);
 router.post('/user/reset', resetPassword);
 
@@ -110,7 +115,10 @@ router.post('/listados/ventas/resumen', resumenVentasDesdeHasta);
 router.post('/listados/ventas/sucursales', ventasPorSucursales);
 
 router.get('/productos', productosStock);
-/* router.get('/productos/:id_producto', comprasProducto); */
+router.get('/sucursal/productos', allProductos);
+
+router.get('/sucursal/stock/productos', productosStock);
+
 router.post('/productos', addProductos);
 router.put('/productos/', updateProductos);
 router.put('/productos/upcodigobarra', actualizarCodigosBarras);
