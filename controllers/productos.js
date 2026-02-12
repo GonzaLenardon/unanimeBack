@@ -71,7 +71,7 @@ const addProductos = async (req, res) => {
 
     const prodUp = await Productos.update(
       { codigo: codigoGenerado },
-      { where: { id_producto: id } }
+      { where: { id_producto: id } },
     );
 
     console.log('Esto mando al front', prodUp);
@@ -108,9 +108,9 @@ const allProductos = async (req, res) => {
             'COALESCE',
             sequelize.fn(
               'SUM',
-              sequelize.col('compras.detalleCompraToSucursal.stock')
+              sequelize.col('compras.detalleCompraToSucursal.stock'),
             ),
-            0
+            0,
           ),
           'stock_total',
         ],
@@ -169,9 +169,9 @@ const productosStock = async (req, res) => {
             'COALESCE',
             sequelize.fn(
               'SUM',
-              sequelize.col('compras.detalleCompraToSucursal.stock')
+              sequelize.col('compras.detalleCompraToSucursal.stock'),
             ),
-            0
+            0,
           ),
           'stock_total',
         ],
@@ -201,11 +201,11 @@ const productosStock = async (req, res) => {
           'COALESCE',
           sequelize.fn(
             'SUM',
-            sequelize.col('compras.detalleCompraToSucursal.stock')
+            sequelize.col('compras.detalleCompraToSucursal.stock'),
           ),
-          0
+          0,
         ),
-        { [Op.gt]: 0 }
+        { [Op.gt]: 0 },
       ),
 
       order: [['nombre', 'ASC']],
@@ -305,7 +305,7 @@ const updateProductos = async (req, res) => {
     observaciones,
   } = req.body;
 
-  const codGenerado = await generarCodigo(req.body);
+  const codGenerado = codigo || (await generarCodigo(req.body));
 
   try {
     const productoExistente = await Productos.findByPk(id_producto);
@@ -334,7 +334,7 @@ const updateProductos = async (req, res) => {
         observaciones,
         updatedAt: fecha,
       },
-      { where: { id_producto } }
+      { where: { id_producto } },
     );
 
     res.status(200).json({ message: 'Producto actualizado correctamente' });

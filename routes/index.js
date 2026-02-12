@@ -26,6 +26,7 @@ const {
   registrarVenta,
   ventaDetalles,
   ventasPorSucursal,
+  obtenerVentaConHistorialYVigentes,
 } = require('../controllers/ventas');
 const {
   addcompras,
@@ -87,12 +88,13 @@ const {
 const { registrarCambioProducto } = require('../controllers/cambios');
 
 router.post('/user/login', login);
+router.post('/user', addUser);
 
 router.use(authMiddleware); // 👈 A partir de aquí, todas requieren token
 
 router.get('/user', allUsers);
 router.get('/user/me', authMiddleware, getUser);
-router.post('/user', addUser);
+
 router.put('/user', upUser);
 
 router.post('/user/logout', logout);
@@ -107,7 +109,8 @@ router.post('/ventas/sucursal/:sucursal', ventasPorSucursal);
 router.delete('/ventas/:id', deleteVenta);
 
 router.get('/ventas/:id_producto', ventasProducto);
-router.get('/ventas/detalles/:id_venta', ventaDetalles);
+/* router.get('/ventas/detalles/:id_venta', ventaDetalles); */
+router.get('/ventas/detalles/:id_venta', obtenerVentaConHistorialYVigentes);
 
 router.post('/listados/:sucursal', resumenVentas);
 router.get('/listados/stock/sucursal/:sucursal', verStock);

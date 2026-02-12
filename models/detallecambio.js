@@ -32,6 +32,15 @@ Detallecambio.init(
       type: DataTypes.DECIMAL,
       allowNull: false,
     },
+    reemplazado: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    id_detalle_compra: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // Nullable para productos que se devuelven sin reemplazo
+    },
   },
   {
     sequelize: db,
