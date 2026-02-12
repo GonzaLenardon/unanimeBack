@@ -12,6 +12,7 @@ const { Op } = require('sequelize');
 const addCompra = async (req, res) => {
   const { monto, proveedor_id, numero, detalles } = req.body;
   const id_usuario = req.user.id;
+  const sucursal_id = req.user.sucursal_id;
 
   const t = await db.transaction();
   try {
@@ -42,7 +43,7 @@ const addCompra = async (req, res) => {
     );
 
     // Armar stock (solo una sucursal)
-    const SUCURSAL_UNICA = 1;
+
     const stockData = [];
 
     for (const detalle of detalles) {
@@ -55,7 +56,7 @@ const addCompra = async (req, res) => {
       stockData.push({
         stock: detalle.cantidad,
         productoId: detalle.producto_id,
-        id_sucursal: SUCURSAL_UNICA,
+        id_sucursal: sucursal_id,
         id_detalle_compra: detalleInsertado.id_detalle,
       });
     }

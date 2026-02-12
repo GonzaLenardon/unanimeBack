@@ -691,7 +691,7 @@ const deleteVenta = async (req, res) => {
   }
 };
 
-const ventaDetalles = async (req, res) => {
+/* const ventaDetalles = async (req, res) => {
   const id_venta = req.params.id_venta;
 
   try {
@@ -712,13 +712,393 @@ const ventaDetalles = async (req, res) => {
       where: {
         id_venta: id_venta,
       },
-      /* order: [['id_venta', 'ASC']], */
+     
     });
 
     res.status(200).send(ventasDeProducto);
   } catch (error) {
     console.error('Error al obtener ventas del producto:', error);
     res.status(500).json({ error: 'Error al obtener ventas del producto' });
+  }
+}; */
+
+/* const obtenerVentaConHistorialYVigentes = async (req, res) => {
+  const id_venta_inicial = parseInt(req.params.id_venta, 10);
+
+  try {
+    // 1) OBTENER LA VENTA ORIGINAL
+    const ventaOriginal = await Ventas.findOne({
+      where: { id_venta: id_venta_inicial },
+      attributes: ['id_venta', 'total', 'fecha', 'id_sucursal'],
+      include: [
+        {
+          model: DetalleVentas,
+          as: 'detalles',
+          attributes: [
+            'id_detalleventa',
+            'cantidad',
+            'total',
+            'id_detalle_compra',
+            'id_producto',
+          ],
+          include: [
+            {
+              model: Productos,
+              as: 'producto',
+              attributes: ['id_producto', 'nombre', 'precio_venta'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!ventaOriginal) {
+      return res.status(404).json({ error: 'Venta no encontrada' });
+    }
+
+    // 2) OBTENER TODOS LOS CAMBIOS DE ESTA VENTA
+    const cambios = await Cambio.findAll({
+      where: { id_venta_original: id_venta_inicial },
+      attributes: [
+        'id_cambio',
+        'fecha',
+        'observaciones',
+        'id_venta_diferencia',
+      ],
+      include: [
+        {
+          model: DetalleCambio,
+          as: 'cambiodetalles',
+          attributes: [
+            'id_detalle_cambio',
+            'producto_id',
+            'cantidad',
+            'precio_unitario',
+            'tipo',
+            'reemplazado',
+            'id_detalle_compra',
+          ],
+          include: [
+            {
+              model: Productos,
+              as: 'detallecambioproducto',
+              attributes: ['id_producto', 'nombre', 'precio_venta'],
+            },
+          ],
+        },
+      ],
+      order: [['fecha', 'ASC']], // Ordenar por fecha ascendente
+    });
+
+    // 3) FORMATEAR VENTA ORIGINAL
+    const ventaOriginalFormateada = {
+      id_venta: ventaOriginal.id_venta,
+      fecha: ventaOriginal.fecha,
+      total: ventaOriginal.total,
+      id_sucursal: ventaOriginal.id_sucursal,
+      productos: ventaOriginal.detalles.map((d) => ({
+        id_producto: d.producto?.id_producto || d.id_producto,
+        nombre: d.producto?.nombre || null,
+        cantidad: d.cantidad,
+        precio_unitario: Number(d.total),
+        id_detalle_compra: d.id_detalle_compra,
+        id_detalle_venta: d.id_detalleventa,
+      })),
+    };
+
+    // 4) FORMATEAR CAMBIOS
+    const cambiosFormateados = cambios.map((cambio, index) => {
+      const devueltos = cambio.cambiodetalles
+        .filter((dc) => dc.tipo === 'devuelve')
+        .map((dc) => ({
+          id_detalle_cambio: dc.id_detalle_cambio,
+          id_producto: dc.detallecambioproducto?.id_producto || dc.producto_id,
+          nombre: dc.detallecambioproducto?.nombre || null,
+          cantidad: dc.cantidad,
+          precio_unitario: Number(dc.precio_unitario),
+          id_detalle_compra: dc.id_detalle_compra,
+          reemplazado: dc.reemplazado,
+        }));
+
+      const recibidos = cambio.cambiodetalles
+        .filter((dc) => dc.tipo === 'recibe')
+        .map((dc) => ({
+          id_detalle_cambio: dc.id_detalle_cambio,
+          id_producto: dc.detallecambioproducto?.id_producto || dc.producto_id,
+          nombre: dc.detallecambioproducto?.nombre || null,
+          cantidad: dc.cantidad,
+          precio_unitario: Number(dc.precio_unitario),
+          id_detalle_compra: dc.id_detalle_compra,
+          reemplazado: dc.reemplazado,
+        }));
+
+      return {
+        numero: index + 1,
+        id_cambio: cambio.id_cambio,
+        fecha: cambio.fecha,
+        observaciones: cambio.observaciones,
+        id_venta_diferencia: cambio.id_venta_diferencia,
+        devueltos,
+        recibidos,
+      };
+    });
+
+    // 5) CALCULAR PRODUCTOS VIGENTES
+    let vigentes = [];
+
+    if (cambios.length > 0) {
+      // Si hay cambios, los vigentes son los productos "recibidos"
+      // en el último cambio que NO han sido reemplazados
+      const ultimoCambio = cambios[cambios.length - 1];
+
+      vigentes = ultimoCambio.cambiodetalles
+        .filter((dc) => dc.tipo === 'recibe' && dc.reemplazado === false)
+        .map((dc) => ({
+          id_producto: dc.detallecambioproducto?.id_producto || dc.producto_id,
+          nombre: dc.detallecambioproducto?.nombre || null,
+          cantidad: dc.cantidad,
+          precio_unitario: Number(dc.precio_unitario),
+          id_detalle_compra: dc.id_detalle_compra,
+          id_detalle_cambio: dc.id_detalle_cambio,
+        }));
+    } else {
+      // Si no hay cambios, los vigentes son los de la venta original
+      vigentes = ventaOriginal.detalles.map((d) => ({
+        id_producto: d.producto?.id_producto || d.id_producto,
+        nombre: d.producto?.nombre || null,
+        cantidad: d.cantidad,
+        precio_unitario: Number(d.total),
+        id_detalle_compra: d.id_detalle_compra,
+        id_detalle_venta: d.id_detalleventa,
+      }));
+    }
+
+    // 6) RESPUESTA FINAL
+    return res.status(200).json({
+      ventaOriginal: ventaOriginalFormateada,
+      cambios: cambiosFormateados,
+      vigentes: vigentes,
+    });
+  } catch (error) {
+    console.error('❌ Error al obtener historial y productos vigentes:', error);
+    return res.status(500).json({
+      error: 'Error al obtener historial y productos vigentes',
+      detail: error.message,
+    });
+  }
+}; */
+
+const obtenerVentaConHistorialYVigentes = async (req, res) => {
+  const id_venta_inicial = parseInt(req.params.id_venta, 10);
+
+  try {
+    // 1) OBTENER LA VENTA ORIGINAL
+    const ventaOriginal = await Ventas.findOne({
+      where: { id_venta: id_venta_inicial },
+      attributes: ['id_venta', 'total', 'fecha', 'id_sucursal'],
+      include: [
+        {
+          model: DetalleVentas,
+          as: 'detalles',
+          attributes: [
+            'id_detalleventa',
+            'cantidad',
+            'total',
+            'id_detalle_compra',
+            'id_producto',
+          ],
+          include: [
+            {
+              model: Productos,
+              as: 'producto',
+              attributes: ['id_producto', 'nombre', 'precio_venta'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!ventaOriginal) {
+      return res.status(404).json({ error: 'Venta no encontrada' });
+    }
+
+    // 2) OBTENER TODOS LOS CAMBIOS DE ESTA VENTA
+    const cambios = await Cambio.findAll({
+      where: { id_venta_original: id_venta_inicial },
+      attributes: [
+        'id_cambio',
+        'fecha',
+        'observaciones',
+        'id_venta_diferencia',
+      ],
+      include: [
+        {
+          model: DetalleCambio,
+          as: 'cambiodetalles',
+          attributes: [
+            'id_detalle_cambio',
+            'producto_id',
+            'cantidad',
+            'precio_unitario',
+            'tipo',
+            'reemplazado',
+            'id_detalle_compra',
+          ],
+          include: [
+            {
+              model: Productos,
+              as: 'detallecambioproducto',
+              attributes: ['id_producto', 'nombre', 'precio_venta'],
+            },
+          ],
+        },
+      ],
+      order: [['fecha', 'ASC']], // Ordenar por fecha ascendente
+    });
+
+    // 3) FORMATEAR VENTA ORIGINAL
+    const ventaOriginalFormateada = {
+      id_venta: ventaOriginal.id_venta,
+      fecha: ventaOriginal.fecha,
+      total: ventaOriginal.total,
+      id_sucursal: ventaOriginal.id_sucursal,
+      productos: ventaOriginal.detalles.map((d) => ({
+        id_producto: d.producto?.id_producto || d.id_producto,
+        nombre: d.producto?.nombre || null,
+        cantidad: d.cantidad,
+        precio_unitario: Number(d.total),
+        id_detalle_compra: d.id_detalle_compra,
+        id_detalle_venta: d.id_detalleventa,
+      })),
+    };
+
+    // 4) FORMATEAR CAMBIOS
+    const cambiosFormateados = cambios.map((cambio, index) => {
+      const devueltos = cambio.cambiodetalles
+        .filter((dc) => dc.tipo === 'devuelve')
+        .map((dc) => ({
+          id_detalle_cambio: dc.id_detalle_cambio,
+          id_producto: dc.detallecambioproducto?.id_producto || dc.producto_id,
+          nombre: dc.detallecambioproducto?.nombre || null,
+          cantidad: dc.cantidad,
+          precio_unitario: Number(dc.precio_unitario),
+          id_detalle_compra: dc.id_detalle_compra,
+          reemplazado: dc.reemplazado,
+        }));
+
+      const recibidos = cambio.cambiodetalles
+        .filter((dc) => dc.tipo === 'recibe')
+        .map((dc) => ({
+          id_detalle_cambio: dc.id_detalle_cambio,
+          id_producto: dc.detallecambioproducto?.id_producto || dc.producto_id,
+          nombre: dc.detallecambioproducto?.nombre || null,
+          cantidad: dc.cantidad,
+          precio_unitario: Number(dc.precio_unitario),
+          id_detalle_compra: dc.id_detalle_compra,
+          reemplazado: dc.reemplazado,
+        }));
+
+      return {
+        numero: index + 1,
+        id_cambio: cambio.id_cambio,
+        fecha: cambio.fecha,
+        observaciones: cambio.observaciones,
+        id_venta_diferencia: cambio.id_venta_diferencia,
+        devueltos,
+        recibidos,
+      };
+    });
+
+    // 5) CALCULAR PRODUCTOS VIGENTES CORRECTAMENTE
+    let vigentes = [];
+
+    if (cambios.length > 0) {
+      // ============================================================
+      // LÓGICA CORREGIDA: Calcular vigentes considerando TODO
+      // ============================================================
+
+      // Paso 1: Crear un mapa con los productos originales
+      const mapaVigentes = new Map();
+
+      ventaOriginal.detalles.forEach((d) => {
+        const key = `${d.id_producto}_${d.id_detalle_compra}`;
+        mapaVigentes.set(key, {
+          id_producto: d.producto?.id_producto || d.id_producto,
+          nombre: d.producto?.nombre || null,
+          cantidad: d.cantidad,
+          precio_unitario: Number(d.total),
+          id_detalle_compra: d.id_detalle_compra,
+          id_detalle_venta: d.id_detalleventa,
+          origen: 'original',
+        });
+      });
+
+      // Paso 2: Procesar TODOS los cambios en orden cronológico
+      cambios.forEach((cambio) => {
+        cambio.cambiodetalles.forEach((dc) => {
+          const key = `${dc.producto_id}_${dc.id_detalle_compra}`;
+
+          if (dc.tipo === 'devuelve') {
+            // Restar cantidad devuelta del producto original
+            if (mapaVigentes.has(key)) {
+              const producto = mapaVigentes.get(key);
+              producto.cantidad -= dc.cantidad;
+
+              // Si la cantidad llega a 0 o menos, eliminar del mapa
+              if (producto.cantidad <= 0) {
+                mapaVigentes.delete(key);
+              }
+            }
+          } else if (dc.tipo === 'recibe') {
+            // Agregar o sumar cantidad recibida
+            if (mapaVigentes.has(key)) {
+              // Si ya existe (mismo producto y lote), sumar cantidad
+              const producto = mapaVigentes.get(key);
+              producto.cantidad += dc.cantidad;
+            } else {
+              // Si es un producto nuevo, agregarlo
+              mapaVigentes.set(key, {
+                id_producto:
+                  dc.detallecambioproducto?.id_producto || dc.producto_id,
+                nombre: dc.detallecambioproducto?.nombre || null,
+                cantidad: dc.cantidad,
+                precio_unitario: Number(dc.precio_unitario),
+                id_detalle_compra: dc.id_detalle_compra,
+                id_detalle_cambio: dc.id_detalle_cambio,
+                origen: 'cambio',
+              });
+            }
+          }
+        });
+      });
+
+      // Paso 3: Convertir el mapa a array
+      vigentes = Array.from(mapaVigentes.values());
+    } else {
+      // Si no hay cambios, los vigentes son los de la venta original
+      vigentes = ventaOriginal.detalles.map((d) => ({
+        id_producto: d.producto?.id_producto || d.id_producto,
+        nombre: d.producto?.nombre || null,
+        cantidad: d.cantidad,
+        precio_unitario: Number(d.total),
+        id_detalle_compra: d.id_detalle_compra,
+        id_detalle_venta: d.id_detalleventa,
+        origen: 'original',
+      }));
+    }
+
+    // 6) RESPUESTA FINAL
+    return res.status(200).json({
+      ventaOriginal: ventaOriginalFormateada,
+      cambios: cambiosFormateados,
+      vigentes: vigentes,
+    });
+  } catch (error) {
+    console.error('❌ Error al obtener historial y productos vigentes:', error);
+    return res.status(500).json({
+      error: 'Error al obtener historial y productos vigentes',
+      detail: error.message,
+    });
   }
 };
 
@@ -728,6 +1108,7 @@ module.exports = {
   desdeHasta,
   deleteVenta,
   registrarVenta,
-  ventaDetalles,
+
   ventasPorSucursal,
+  obtenerVentaConHistorialYVigentes,
 };

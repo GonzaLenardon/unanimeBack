@@ -166,6 +166,15 @@ Productos.hasMany(DetalleCambio, {
   foreignKey: 'producto_id',
   as: 'productoendetallecambio',
 });
+DetalleCompra.hasMany(DetalleCambio, {
+  foreignKey: 'id_detalle_compra',
+  as: 'cambios',
+});
+
+DetalleCambio.belongsTo(DetalleCompra, {
+  foreignKey: 'id_detalle_compra',
+  as: 'detalleCompra',
+});
 
 module.exports = {
   Usuarios,

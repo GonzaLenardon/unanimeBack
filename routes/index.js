@@ -26,6 +26,7 @@ const {
   registrarVenta,
   ventaDetalles,
   ventasPorSucursal,
+  obtenerVentaConHistorialYVigentes,
 } = require('../controllers/ventas');
 const {
   addcompras,
@@ -108,7 +109,8 @@ router.post('/ventas/sucursal/:sucursal', ventasPorSucursal);
 router.delete('/ventas/:id', deleteVenta);
 
 router.get('/ventas/:id_producto', ventasProducto);
-router.get('/ventas/detalles/:id_venta', ventaDetalles);
+/* router.get('/ventas/detalles/:id_venta', ventaDetalles); */
+router.get('/ventas/detalles/:id_venta', obtenerVentaConHistorialYVigentes);
 
 router.post('/listados/:sucursal', resumenVentas);
 router.get('/listados/stock/sucursal/:sucursal', verStock);
